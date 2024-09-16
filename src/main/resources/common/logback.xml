@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+        <jmxConfigurator />
+        <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+        <property resource="logback.properties" />
+         
+	<!-- Application Log -->
+	<appender name="fileappender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${org.simple4j.logging.location}/${logSuffix}/${logName}.log</file>
+		<encoder>
+			<pattern>${org.simple4j.logging.pattern}</pattern>
+		</encoder>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${org.simple4j.logging.location}/${logSuffix}/${logName}.log.%d{yyyy-MM-dd-HH}.gz
+			</fileNamePattern>
+		    <maxHistory>360</maxHistory>
+		</rollingPolicy>
+	</appender>
+	
+	<logger name="org.simple4j" level="${org.simple4j.logging.level}" additivity="false">
+	    <appender-ref ref="fileappender" />
+	</logger>
+	<!--  alert log end -->
+
+	 <logger name="org.eclipse.jetty" additivity="false" level="INFO">
+		<appender-ref ref="fileappender" />
+	</logger>
+
+	<logger name="org.simple4j.eventdistributor.interceptor.MethodLoggingInterceptor" level="WARN">
+	</logger>
+	
+	<logger name="org.simple4j.eventdistributor.dao" level="${mybatis.mapper.logging.level}" />
+
+	<logger name="org.simple4j.eventdistributor.validation" level="WARN">
+	</logger>
+	
+	<logger name="org.simple4j.eventdistributor.Main" level="INFO">
+	</logger>
+	
+	<root level="INFO">
+		<appender-ref ref="fileappender" />
+	</root>
+</configuration>
+   

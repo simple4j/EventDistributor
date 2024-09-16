@@ -1,0 +1,41 @@
+EVENT:
+EVENT_ID /SEQUENCE
+BUSINESS_RECORD_ID
+BUSINESS_REPORT_TYPE
+BUSINESS_RECORD_SUB_TYPE
+BUSINESS_RECORD_VERSION
+SOURCE
+STATUS //NEW, DUPLICATE, IN_PROGRESS, FAILURE, SUCCESS
+DUPLICATE_EVENT_ID //self FK
+DUPLICATE_CHECK_END_TIME //until this time, if another request comes for same values (BUSINESS_RECORD_ID, BUSINESS_REPORD_TYPE, BUSINESS_RECORD_SUB_TYPE, BUSINESS_RECORD_VERSION) will be assumed as duplicate record and ignored. DUPLICATE_EVENT_ID will be set. Duplicate event id record will have the same DUPLICATE_CHECK_END_TIME
+REPOST_PARENT_EVENT_ID //self FK
+PROCESSING_HOST
+STATUS_EXPIRY_TIME
+CREATE_TIME
+UPDATE_TIME
+CREATE_BY //used if any event manually sent from any admin page.
+
+
+EVENT_TARGET:
+EVENT_ID
+TARGET_ID //pre-configured in spring
+
+PUBLISH_ATTEMPT:
+PUBLISH_ID
+EVENT_ID
+TARGET_ID
+RESPONSE_HTTP_CODE
+RESPONSE_BODY
+ERROR_DETAILS
+CREATE_TINME
+UPDATE_TIME
+CREATED_BY //used if any ;ublish attempt manually sent from any admin page.
+
+
+
+postEvent
+getEvents - pagination and only from event table with optional whole matches across fields
+getEvent - will fetch all the details by eventId
+rePostEvent - will repost the whole event and will go to all targets
+rePublish - only for one target. This is another try from admin page
+

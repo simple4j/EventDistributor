@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:ws="http://jax-ws.dev.java.net/spring/core"
+       xmlns:wss="http://jax-ws.dev.java.net/spring/servlet"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:p="http://www.springframework.org/schema/p"
+	   xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	   					   http://www.springframework.org/schema/beans/spring-beans.xsd
+	   					   http://www.springframework.org/schema/context
+	   					   http://www.springframework.org/schema/context/spring-context-3.0.xsd
+	   					   http://jax-ws.dev.java.net/spring/core
+        				   http://jax-ws.dev.java.net/spring/core.xsd
+        				   http://www.springframework.org/schema/aop
+						   http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+        				   http://jax-ws.dev.java.net/spring/servlet
+        				   http://jax-ws.dev.java.net/spring/servlet.xsd
+        				   http://www.springframework.org/schema/task
+                           http://www.springframework.org/schema/task/spring-task-3.0.xsd
+                           http://www.springframework.org/schema/util
+                           http://www.springframework.org/schema/util/spring-util.xsd">
+    
+	<aop:config proxy-target-class="false">
+	    <aop:advisor advice-ref="parameterValidatorInterceptor" pointcut="execution(public * org.simple4j.eventdistributor.japi.EventDistributorService.*(..))"/>
+	</aop:config>
+
+	<bean id="parameterValidatorInterceptor" class="org.simple4j.eventdistributor.interceptor.ParametersValidationInterceptor">
+		<property name="method2Validators" >
+			<map>
+				<!-- One entry for every method that needs parameter validation -->
+				<entry key="public org.simple4j.eventdistributor.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.postEvent(org.simple4j.eventdistributor.beans.Event)">
+					<!-- list of ParameterValidator for each of the parameters -->
+					<list>
+						<ref bean="eventValidator"/>
+						<ref bean="businessRecordIdValidator"/>
+						<ref bean="businessRecordType;Validator"/>
+						<ref bean="sourceValidator"/>
+						<ref bean="createByValidator"/>
+						<ref bean="businessRecordSubTypeValidator"/>
+						<ref bean="businessRecordVersionValidator"/>
+					</list>
+				</entry>
+
+				<entry key="public org.simple4j.eventdistributor.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.getEvent(java.lang.String,java.lang.String)">
+					<!-- list of ParameterValidator for each of the parameters -->
+					<list>
+						<ref bean="callerIdValidator"/>
+						<ref bean="eventIdValidator"/>
+					</list>
+				</entry>
+
+				<entry key="public org.simple4j.eventdistributor.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.getEvents(java.lang.String,java.lang.String,java.lang.String,java.lang.String,org.simple4j.eventdistributor.beans.Event)">
+					<!-- list of ParameterValidator for each of the parameters -->
+					<list>
+						<ref bean="callerIdValidator"/>
+						<ref bean="startPositionValidator"/>
+						<ref bean="numberOfRecordsValidator"/>
+						<ref bean="eventIdValidator"/>
+						<ref bean="eventValidator"/>
+					</list>
+				</entry>
+
+				<entry key="public org.simple4j.eventdistributor.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.repostEvent(java.lang.String,java.lang.String)">
+					<!-- list of ParameterValidator for each of the parameters -->
+					<list>
+						<bean parent="createByValidator">
+							<property name="argumentPropertyPath" value="createBy" />
+						</bean>
+						<bean parent="eventIdValidator">
+							<property name="argumentPropertyPath" value="eventIdStr" />
+						</bean>
+					</list>
+				</entry>
+
+				<entry key="public org.simple4j.eventdistributor.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.republish(java.lang.String,java.lang.String)">
+					<!-- list of ParameterValidator for each of the parameters -->
+					<list>
+						<bean parent="createByValidator">
+							<property name="argumentPropertyPath" value="createBy" />
+						</bean>
+						<bean parent="eventIdValidator">
+							<property name="fieldName" value="publishId" />
+							<property name="argumentPropertyPath" value="publishIdStr" />
+						</bean>
+					</list>
+				</entry>
+
+				<entry key="public org.simple4j.eventdistributor.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.abortEvent(java.lang.String,java.lang.String)">
+					<!-- list of ParameterValidator for each of the parameters -->
+					<list>
+						<bean parent="createByValidator">
+							<property name="fieldName" value="updateBy" />
+							<property name="argumentPropertyPath" value="updateBy" />
+						</bean>
+						<ref bean="eventIdValidator"/>
+					</list>
+				</entry>
+
+			</map>
+		</property>
+	</bean>
+	
+	<bean id="callerIdValidator" class="org.simple4j.eventdistributor.validation.ParameterValidator">
+		<property name="fieldName" value="callerId" />
+		<property name="argumentPropertyPath" value="callerId" />
+		<property name="validators">
+			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+			<list>
+				<bean class="org.simple4j.eventdistributor.validation.NullValidator" />
+				<bean class="org.simple4j.eventdistributor.validation.RegExpValidator" >
+					<property name="regExp" value="(SELF)|(ADMIN_UI)|(CALLER1)"></property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="eventIdValidator" class="org.simple4j.eventdistributor.validation.ParameterValidator">
+		<property name="fieldName" value="eventId" />
+		<property name="argumentPropertyPath" value="eventId" />
+		<property name="validators">
+			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+			<list>
+				<bean class="org.simple4j.eventdistributor.validation.NullValidator" />
+				<bean class="org.simple4j.eventdistributor.validation.MinLengthValidator" >
+					<property name="minLength" value="1"></property>
+				</bean>
+				<bean class="org.simple4j.eventdistributor.validation.MaxLengthValidator" >
+					<property name="maxLength" value="16"></property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="eventValidator" class="org.simple4j.eventdistributor.validation.ParameterValidator">
+		<property name="fieldName" value="event" />
+		<property name="argumentPropertyPath" value="event" />
+		<property name="validators">
+			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+			<list>
+				<bean class="org.simple4j.eventdistributor.validation.NullValidator" />
+			</list>
+		</property>
+	</bean>
+
+	<bean id="businessRecordIdValidator" class="org.simple4j.eventdistributor.validation.ParameterValidator">
+		<property name="fieldName" value="businessRecordId" />
+		<property name="argumentPropertyPath" value="event.businessRecordId" />
+		<property name="validators">
+			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+			<list>
+				<bean class="org.simple4j.eventdistributor.validation.NullValidator" />
+				<bean class="org.simple4j.eventdistributor.validation.MinLengthValidator" >
+					<property name="minLength" value="1"></property>
+				</bean>
+				<bean class="org.simple4j.eventdistributor.validation.MaxLengthValidator" >
+					<property name="maxLength" value="256"></property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="businessRecordTypeValidator" class="org.simple4j.eventdistributor.validation.ParameterValidator">
+		<property name="fieldName" value="businessRecordType" />
+		<property name="argumentPropertyPath" value="event.businessRecordType" />
+		<property name="validators">
+			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+			<list>
+				<bean class="org.simple4j.eventdistributor.validation.NullValidator" />
+				<bean class="org.simple4j.eventdistributor.validation.MinLengthValidator" >
+					<property name="minLength" value="5"></property>
+				</bean>
+				<bean class="org.simple4j.eventdistributor.validation.MaxLengthValidator" >
+					<property name="maxLength" value="256"></property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="sourceValidator" class="org.simple4j.eventdistributor.validation.ParameterValidator">
+		<property name="fieldName" value="source" />
+		<property name="argumentPropertyPath" value="event.source" />
+		<property name="validators">
+			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+			<list>
+				<bean class="org.simple4j.eventdistributor.validation.NullValidator" />
+				<bean class="org.simple4j.eventdistributor.validation.MinLengthValidator" >
+					<property name="minLength" value="2"></property>
+				</bean>
+				<bean class="org.simple4j.eventdistributor.validation.MaxLengthValidator" >
+					<property name="maxLength" value="124"></property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="createByValidator" class="org.simple4j.eventdistributor.validation.ParameterValidator">
+		<property name="fieldName" value="createBy" />
+		<property name="argumentPropertyPath" value="event.createBy" />
+		<property name="validators">
+			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+			<list>
+				<bean class="org.simple4j.eventdistributor.validation.NullValidator" />
+				<bean class="org.simple4j.eventdistributor.validation.MinLengthValidator" >
+					<property name="minLength" value="1"></property>
+				</bean>
+				<bean class="org.simple4j.eventdistributor.validation.MaxLengthValidator" >
+					<property name="maxLength" value="124"></property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="businessRecordSubTypeValidator" class="org.simple4j.eventdistributor.validation.ParameterValidator">
+		<property name="fieldName" value="businessRecordSubType" />
+		<property name="argumentPropertyPath" value="event.businessRecordSubType" />
+		<property name="validators">
+			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+			<list>
+				<bean class="org.simple4j.eventdistributor.validation.MaxLengthValidator" >
+					<property name="maxLength" value="124"></property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="businessRecordVersionValidator" class="org.simple4j.eventdistributor.validation.ParameterValidator">
+		<property name="fieldName" value="businessRecordVersion" />
+		<property name="argumentPropertyPath" value="event.businessRecordVersion" />
+		<property name="validators">
+			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+			<list>
+				<bean class="org.simple4j.eventdistributor.validation.MaxLengthValidator" >
+					<property name="maxLength" value="124"></property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="startPositionValidator" class="org.simple4j.eventdistributor.validation.ParameterValidator">
+		<property name="fieldName" value="startPosition" />
+		<property name="argumentPropertyPath" value="startPosition" />
+		<property name="validators">
+			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+			<list>
+				<bean class="org.simple4j.eventdistributor.validation.NullValidator" />
+				<bean class="org.simple4j.eventdistributor.validation.MinValueValidator" >
+					<property name="minValue" value="1"></property>
+				</bean>
+				<bean class="org.simple4j.eventdistributor.validation.MaxValueValidator" >
+					<property name="maxValue" value="5000"></property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="numberOfRecordsValidator" class="org.simple4j.eventdistributor.validation.ParameterValidator">
+		<property name="fieldName" value="numberOfRecords" />
+		<property name="argumentPropertyPath" value="numberOfRecords" />
+		<property name="validators">
+			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+			<list>
+				<bean class="org.simple4j.eventdistributor.validation.NullValidator" />
+				<bean class="org.simple4j.eventdistributor.validation.MinValueValidator" >
+					<property name="minValue" value="1"></property>
+				</bean>
+				<bean class="org.simple4j.eventdistributor.validation.MaxValueValidator" >
+					<property name="maxValue" value="250"></property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+</beans>

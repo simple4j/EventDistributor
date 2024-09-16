@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                        http://www.springframework.org/schema/beans/spring-beans.xsd
+                        http://www.springframework.org/schema/context 
+                        http://www.springframework.org/schema/context/spring-context.xsd
+                        http://www.springframework.org/schema/util
+						http://www.springframework.org/schema/util/spring-util-3.1.xsd">
+
+	<bean id="system2Caller" factory-bean="callerFactory1" factory-method="getCaller"></bean>
+	
+	<bean id="callerFactory2" class="org.simple4j.wsclient.caller.factory.FreeMarkerJSONCallerFactory">
+		<property name="httpWSClient" ref="httpWSClient2" />
+		<property name="jSONConfigFile" value="classpath:wstarget/system2.json" />
+		<property name="responseBodyParsers">
+			<map>
+				<entry key="(200)|(404)|(403)">
+					<bean id="jsonBodyParser" class="org.simple4j.wsclient.parser.impl.JSONParser">
+					</bean>
+				</entry>
+			</map>
+		</property>
+	</bean>
+
+	<bean id="httpWSClient2" class="org.simple4j.wsclient.http.HTTPWSClient">
+		<property name="connectionTimeOutMillis" value="1000"></property>
+		<property name="maxConnectionsPerHost" value="10"></property>
+		<property name="numberOfRetries" value="2"></property>
+		<property name="serviceHostName" value="sd-b01c-a9cd.nam.nsroot.net"></property>
+		<property name="servicePortNumber" value="9250"></property>
+		<property name="serviceProtocol" value="http"></property>
+		<property name="socketTimeOutMillis" value="3000"></property>
+	</bean>
+	
+
+</beans>

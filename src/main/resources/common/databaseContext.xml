@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:aop="http://www.springframework.org/schema/aop" 
+	xsi:schemaLocation="http://www.springframework.org/schema/beans		
+		http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+    	http://www.springframework.org/schema/context	
+    	http://www.springframework.org/schema/context/spring-context-4.0.xsd
+    	http://jax-ws.dev.java.net/spring/core
+        http://jax-ws.dev.java.net/spring/core-4.0.xsd
+        http://jax-ws.dev.java.net/spring/servlet
+        http://jax-ws.dev.java.net/spring/servlet-4.0.xsd
+    	http://www.springframework.org/schema/aop 
+     	http://www.springframework.org/schema/aop/spring-aop-4.0.xsd">
+     	
+ 	
+	<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource">
+		<property name="autoCommit" value="false" />
+		<property name="connectionTestQuery" value="select 1 from dual"></property>
+		<property name="connectionTimeout" value="1000"></property>
+		<property name="idleTimeout" value="900000"></property>
+		<property name="jdbcUrl" value="jdbc:oracle:thin:@(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.us-ashburn-1.oraclecloud.com))(connect_data=(service_name=g610bfb2926ce22_development_high.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))"></property>
+		<property name="leakDetectionThreshold" value="10000"></property>
+		<property name="maximumPoolSize" value="15"></property>
+		<property name="maxLifetime" value="2900000"></property>
+		<property name="password" value=""></property>
+		<property name="username" value="SIMPLE4J"></property>
+		<property name="validationTimeout" value="1000"></property>
+		<property name="minimumIdle" value="5"></property>
+		<property name="dataSourceProperties">
+			<props>
+				<prop key="oracle.jdbc.ReadTimeout">1000ms</prop>
+			</props>
+		</property>
+	</bean>
+		
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource" />
+        <property name="configLocation" value="classpath:dao/myBatisConfig.xml" />
+    </bean>
+    
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    
+    <bean id="eventDistributorMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">
+		<property name="mapperInterface" value="org.simple4j.eventdistributor.dao.EventDistributorMapper" />
+		<property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+
+</beans>
