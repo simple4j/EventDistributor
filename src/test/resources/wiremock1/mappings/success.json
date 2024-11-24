@@ -1,0 +1,11 @@
+{
+    "request": {
+        "method": "GET",
+        "urlPattern": "/system1/cacheclear/entry.json.*"
+        /* "url": "/system1/cacheclear/entry.json?key=1&type=AA&refresh=true" */
+    },
+    "response": {
+        "status": 200,
+        "body": "SUCCESS"
+    }
+}

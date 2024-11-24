@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.simple4j.eventdistributor.beans.AppResponse;
-import org.simple4j.eventdistributor.beans.ErrorDetails;
+import org.simple4j.apiaopvalidator.beans.AppResponse;
+import org.simple4j.apiaopvalidator.beans.ErrorDetails;
+import org.simple4j.eventdistributor.beans.ErrorType;
 import org.simple4j.eventdistributor.beans.Event;
 import org.simple4j.eventdistributor.beans.EventStatus;
 import org.simple4j.eventdistributor.beans.HealthCheck;
-import org.simple4j.eventdistributor.beans.PublishAttempt;
 import org.simple4j.eventdistributor.japi.EventDistributorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +26,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
-import spark.Response;
-import spark.Spark;
+import io.javalin.Javalin;
+import io.javalin.http.Context;
+
 
 public class Main
 {
@@ -43,11 +44,9 @@ public class Main
 
     private static Main main = null;
 
-    private int listenerPortNumber = 9260;
-    private int listenerThreadMax = 100;
-    private int listenerThreadMin = 10;
+    private int listenerPortNumber = 2410;
     private int listenerIdleTimeoutMillis = 600000;
-    private String urlBase = "/foundation/eventdistributorws/eppublic/V1";
+    private String urlBase = "/eventdistributorws/eppublic/V1";
 
     private EventDistributorService eventDistributorService = null;
     private String userIdHeader = "userId";
@@ -78,26 +77,16 @@ public class Main
         main = context.getBean("main", Main.class);
         main.init();
 
-        Spark.port(main.getListenerPortNumber());
+		Javalin javalin = Javalin.create();
 
-        Spark.threadPool(main.getListenerThreadMax(), main.getListenerThreadMin(), main.getListenerIdleTimeoutMillis());
-
-        //Spark request lifecycle:
-        // Spark.before
-        // Spark.get / post / delete / put / list
-        // ResponseTransformer to marshall the body
-        // If no exception thrown in above steps, Spark.after
-        // If any exception thrown in above steps including Spark.after, Spark.exception
-        // Spark.afterAfter
-        
-        Spark.before((request, response) ->
+        javalin.before(ctx ->
         {
             long startTimeMillisec = System.currentTimeMillis();
-            request.attribute(START_TIME_MILLISEC, startTimeMillisec);
+            ctx.attribute(START_TIME_MILLISEC, startTimeMillisec);
             
 			String requestId = startTimeMillisec + "@" + main.hostName;
 
-            String headerRequestId = request.headers(REQUEST_ID_KEY);
+            String headerRequestId = ctx.header(REQUEST_ID_KEY);
             if (StringUtils.isNotBlank(headerRequestId))
             {
                 requestId = headerRequestId;
@@ -105,41 +94,45 @@ public class Main
 
             MDC.put(REQUEST_ID_KEY, requestId);
             String body = "";
-            String query = request.queryString();
-            response.header("content-type", "application/json");
-            LOGGER.info("Start request url is {}, method is {}, {}{}", request.uri(), request.requestMethod(),
+            String query = ctx.queryString();
+            ctx.header("content-type", "application/json");
+            LOGGER.info("Start request url is {}, method is {}, {}{}", ctx.url(), ctx.method(),
                     StringUtils.isNotBlank(body) ? ("body is " + body + ", ") : "",
                     StringUtils.isNotBlank(query) ? ("query string is " + query) : "");
         });
 
-        Spark.after((request, response) ->
+        javalin.after(ctx ->
         {
             
-            Object returnObject = request.attribute(JAPI_RETURN_OBJECT);
+            Object returnObject = ctx.attribute(JAPI_RETURN_OBJECT);
             if(returnObject instanceof AppResponse)
             {
-                AppResponse appResponse = request.attribute(JAPI_RETURN_OBJECT);
-                response.status(main.getStatusCode(appResponse));
+                AppResponse appResponse = ctx.attribute(JAPI_RETURN_OBJECT);
+                ctx.status(main.getStatusCode(appResponse));
             }
             else
             {
-                response.status(200);
+                ctx.status(200);
             }
+            
+            finishCall(ctx);
         });
 
-        Spark.exception(Exception.class, (e, req, resp) ->
+        javalin.exception(Exception.class, (e, ctx) ->
         {
             LOGGER.error("Unhandled exception", e);
-            setHeader(resp);
-            resp.status(500);
+            setHeader(ctx);
+            ctx.status(500);
             ErrorDetails errorDetails = new ErrorDetails();
             errorDetails.errorId = MDC.get(REQUEST_ID_KEY);
-            errorDetails.errorType = ErrorDetails.ErrorType.RUNTIME_ERROR;
+            errorDetails.errorType = ErrorType.RUNTIME_ERROR.toString();
             errorDetails.errorDescription = e.toString();
+
+            finishCall(ctx);
 
             try
             {
-                resp.body(OBJECT_MAPPER.writeValueAsString(errorDetails));
+                ctx.result(OBJECT_MAPPER.writeValueAsString(errorDetails));
             }
             catch (JsonProcessingException e1)
             {
@@ -148,18 +141,9 @@ public class Main
             }
         });
 
-        Spark.afterAfter((request, response) ->
+        javalin.post(main.getUrlBase()+"/serverhealth.json", ctx -> 
         {
-            long startTimeMillisec = request.attribute(START_TIME_MILLISEC);
-            LOGGER.info("End request url is {}, method is {}, time {}s, query string is {}", request.uri(),
-                    request.requestMethod(), (System.currentTimeMillis() - startTimeMillisec) / 1000.0,
-                    request.queryString());
-            MDC.clear();
-        });
-        
-        Spark.post(main.getUrlBase()+"/serverhealth.json", (request, response) -> 
-        {
-            String bodyJson = request.body();
+            String bodyJson = ctx.body();
             HealthCheck healthCheckReq = null;
             try
             {
@@ -170,26 +154,25 @@ public class Main
                 throw new RuntimeException("Error parsing request body <" + bodyJson +">",  e);
             }
             main.getEventDistributorService().setHealthCheck(healthCheckReq.status);
-            setHeader(response);
-            return "{}";
+            setHeader(ctx);
+            ctx.result("{}");
         });
 
-        Spark.get(main.getUrlBase()+"/serverhealth.json", (request, response) -> 
+        javalin.get(main.getUrlBase()+"/serverhealth.json", ctx -> 
         {
             AppResponse<HealthCheck> ret = main.getEventDistributorService().getHealthCheck();
             HealthCheck healthCheckRes = ret.responseObject;
-            setHeader(response);
-            
-            return OBJECT_MAPPER.writeValueAsString(healthCheckRes);
+            setHeader(ctx);
+            ctx.result(OBJECT_MAPPER.writeValueAsString(healthCheckRes));
         });
 
-        Spark.post(main.getUrlBase()+"/event.json", (request, response) -> 
+        javalin.post(main.getUrlBase()+"/event.json", ctx -> 
         {
             AppResponse<Long> ret = null;
-            String callerId = request.headers("callerId");
-            String userId = request.headers(main.getUserIdHeader());
+            String callerId = ctx.header("callerId");
+            String userId = ctx.header(main.getUserIdHeader());
             
-            String body = request.body();
+            String body = ctx.body();
             Event event = null;
             try
             {
@@ -210,67 +193,77 @@ public class Main
             
             ret = main.getEventDistributorService().postEvent(event);
 
-            //setting AppResponse object for usage in Spark.after handler
-            request.attribute(JAPI_RETURN_OBJECT, ret);
+            //setting AppResponse object for usage in javalin.after handler
+            ctx.attribute(JAPI_RETURN_OBJECT, ret);
 
             if(ret.errorDetails != null)
-                return OBJECT_MAPPER.writeValueAsString(ret.errorDetails);
+            {
+            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
+                return;
+            }
             
-            return "{}";
+            ctx.result("{}");
         });
 
-        Spark.get(main.getUrlBase()+"/event.json", (request, response) -> 
+        javalin.get(main.getUrlBase()+"/event.json", ctx -> 
         {
             AppResponse<Event> ret = null;
-            String callerId = request.headers("callerId");
-            String eventId = request.queryParams("eventId");
+            String callerId = ctx.header("callerId");
+            String eventId = ctx.queryParam("eventId");
             
             ret = main.getEventDistributorService().getEvent(callerId, eventId);
             
             LOGGER.info("ret:{}", ret);
 
-            //setting AppResponse object for usage in Spark.after handler
-            request.attribute(JAPI_RETURN_OBJECT, ret);
+            //setting AppResponse object for usage in javalin.after handler
+            ctx.attribute(JAPI_RETURN_OBJECT, ret);
             if(ret.errorDetails != null)
-                return OBJECT_MAPPER.writeValueAsString(ret.errorDetails);
-            return OBJECT_MAPPER.writeValueAsString(ret.responseObject);
+            {
+            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
+                return;
+            }
+            ctx.result(OBJECT_MAPPER.writeValueAsString(ret.responseObject));
         });
 
-        Spark.get(main.getUrlBase()+"/events.json", (request, response) -> 
+        javalin.get(main.getUrlBase()+"/events.json", ctx -> 
         {
             AppResponse<List<Event>> ret = null;
-            String callerId = request.headers("callerId");
+            String callerId = ctx.header("callerId");
 
             Event event = new Event();
-            String eventId = request.queryParams("eventId");
-            event.setBusinessRecordId(request.queryParams("businessRecordId"));
-            event.setBusinessRecordType(request.queryParams("businessRecordType"));
-            event.setBusinessRecordSubType(request.queryParams("businessRecordSubType"));
-            event.setBusinessRecordVersion(request.queryParams("businessRecordVersion"));
-            event.setSource(request.queryParams("source"));
-            event.setStatus(EventStatus.valueOf(request.queryParams("status")));
-            event.setProcessingHost(request.queryParams("processingHost"));
-            event.setCreateBy(request.queryParams("createBy"));
-            String startPosition = request.queryParams("startPosition");
-            String numberOfRecords = request.queryParams("numberOfRecords");
+            String eventId = ctx.queryParam("eventId");
+            event.setBusinessRecordId(ctx.queryParam("businessRecordId"));
+            event.setBusinessRecordType(ctx.queryParam("businessRecordType"));
+            event.setBusinessRecordSubType(ctx.queryParam("businessRecordSubType"));
+            event.setBusinessRecordVersion(ctx.queryParam("businessRecordVersion"));
+            event.setSource(ctx.queryParam("source"));
+            event.setStatus(EventStatus.valueOf(ctx.queryParam("status")));
+            event.setProcessingHost(ctx.queryParam("processingHost"));
+            event.setCreateBy(ctx.queryParam("createBy"));
+            String startPosition = ctx.queryParam("startPosition");
+            String numberOfRecords = ctx.queryParam("numberOfRecords");
             
             ret = main.getEventDistributorService().getEvents(callerId, startPosition, numberOfRecords, eventId, event);
             
             LOGGER.info("ret:{}", ret);
 
-            //setting AppResponse object for usage in Spark.after handler
-            request.attribute(JAPI_RETURN_OBJECT, ret);
+            //setting AppResponse object for usage in javalin.after handler
+            ctx.attribute(JAPI_RETURN_OBJECT, ret);
             if(ret.errorDetails != null)
-                return OBJECT_MAPPER.writeValueAsString(ret.errorDetails);
-            return OBJECT_MAPPER.writeValueAsString(ret.responseObject);
+                if(ret.errorDetails != null)
+                {
+                	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
+                    return;
+                }
+                ctx.result(OBJECT_MAPPER.writeValueAsString(ret.responseObject));
         });
 
-        Spark.post(main.getUrlBase()+"/repost/event.json", (request, response) -> 
+        javalin.post(main.getUrlBase()+"/repost/event.json", ctx -> 
         {
             AppResponse<Long> ret = null;
-            String callerId = request.headers("callerId");
-            String userId = request.headers(main.getUserIdHeader());
-            String eventId = request.queryParams("eventId");
+            String callerId = ctx.header("callerId");
+            String userId = ctx.header(main.getUserIdHeader());
+            String eventId = ctx.queryParam("eventId");
             
     		String createBy = null;
         	if(callerId != null && callerId.trim().length() > 0)
@@ -284,21 +277,24 @@ public class Main
 
         	ret = main.getEventDistributorService().repostEvent(eventId, createBy);
 
-            //setting AppResponse object for usage in Spark.after handler
-            request.attribute(JAPI_RETURN_OBJECT, ret);
+            //setting AppResponse object for usage in javalin.after handler
+            ctx.attribute(JAPI_RETURN_OBJECT, ret);
 
             if(ret.errorDetails != null)
-                return OBJECT_MAPPER.writeValueAsString(ret.errorDetails);
+            {
+            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
+                return;
+            }
             
-            return "{}";
+            ctx.result("{}");
         });
 
-        Spark.post(main.getUrlBase()+"/repost/publish.json", (request, response) -> 
+        javalin.post(main.getUrlBase()+"/repost/publish.json", ctx -> 
         {
             AppResponse<Long> ret = null;
-            String callerId = request.headers("callerId");
-            String userId = request.headers(main.getUserIdHeader());
-            String publishId = request.queryParams("publishId");
+            String callerId = ctx.header("callerId");
+            String userId = ctx.header(main.getUserIdHeader());
+            String publishId = ctx.queryParam("publishId");
             
     		String createBy = null;
         	if(callerId != null && callerId.trim().length() > 0)
@@ -312,21 +308,24 @@ public class Main
             
             ret = main.getEventDistributorService().republish(publishId, createBy);
 
-            //setting AppResponse object for usage in Spark.after handler
-            request.attribute(JAPI_RETURN_OBJECT, ret);
+            //setting AppResponse object for usage in javalin.after handler
+            ctx.attribute(JAPI_RETURN_OBJECT, ret);
 
             if(ret.errorDetails != null)
-                return OBJECT_MAPPER.writeValueAsString(ret.errorDetails);
+            {
+            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
+                return;
+            }
             
-            return "{}";
+            ctx.result("{}");
         });
 
-        Spark.post(main.getUrlBase()+"/abort/event.json", (request, response) -> 
+        javalin.post(main.getUrlBase()+"/abort/event.json", ctx -> 
         {
             AppResponse<Long> ret = null;
-            String callerId = request.headers("callerId");
-            String userId = request.headers(main.getUserIdHeader());
-            String eventId = request.queryParams("eventId");
+            String callerId = ctx.header("callerId");
+            String userId = ctx.header(main.getUserIdHeader());
+            String eventId = ctx.queryParam("eventId");
             
     		String updateBy = null;
         	if(callerId != null && callerId.trim().length() > 0)
@@ -340,15 +339,35 @@ public class Main
 
         	ret = main.getEventDistributorService().abortEvent(eventId, updateBy);
 
-            //setting AppResponse object for usage in Spark.after handler
-            request.attribute(JAPI_RETURN_OBJECT, ret);
+            //setting AppResponse object for usage in javalin.after handler
+            ctx.attribute(JAPI_RETURN_OBJECT, ret);
 
             if(ret.errorDetails != null)
-                return OBJECT_MAPPER.writeValueAsString(ret.errorDetails);
+            {
+            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
+                return;
+            }
             
-            return "{}";
+            ctx.result("{}");
         });
 
+        javalin.start(main.getListenerPortNumber());
+        
+    	LOGGER.info("Start up completed");
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        	LOGGER.info("Shutdown hook called");
+        	javalin.stop();
+        }));
+
+        javalin.events(event -> {
+            event.serverStopping(() -> {
+            	LOGGER.info("Stopping event");
+            });
+            event.serverStopped(() -> {
+            	LOGGER.info("Stopped event");
+            });
+        });
+    	LOGGER.info("End of main method");
     }
 
     private void init()
@@ -394,13 +413,22 @@ public class Main
         throw new RuntimeException("main.getErrorType2HTTPStatusMapping() not configured for :"+appResponse);
     }
 
-    private static void setHeader(Response response)
+    private static void setHeader(Context ctx)
     {
-        response.type("application/json;charset=utf-8");
-        response.header("Content-Language", "en");
-        response.header("requestid", MDC.get(REQUEST_ID_KEY));
+        ctx.contentType("application/json;charset=utf-8");
+        ctx.header("Content-Language", "en");
+        ctx.header("requestid", MDC.get(REQUEST_ID_KEY));
     }
 
+    private static void finishCall(Context ctx)
+    {
+        long startTimeMillisec = ctx.attribute(START_TIME_MILLISEC);
+        LOGGER.info("End request url is {}, method is {}, time {}s, query string is {}", ctx.url(),
+        		ctx.method(), (System.currentTimeMillis() - startTimeMillisec) / 1000.0,
+        		ctx.queryString());
+        MDC.clear();
+    }
+    
     public int getListenerPortNumber()
     {
         return listenerPortNumber;
@@ -409,26 +437,6 @@ public class Main
     public void setListenerPortNumber(int listenerPortNumber)
     {
         this.listenerPortNumber = listenerPortNumber;
-    }
-
-    public int getListenerThreadMax()
-    {
-        return listenerThreadMax;
-    }
-
-    public void setListenerThreadMax(int listenerThreadMax)
-    {
-        this.listenerThreadMax = listenerThreadMax;
-    }
-
-    public int getListenerThreadMin()
-    {
-        return listenerThreadMin;
-    }
-
-    public void setListenerThreadMin(int listenerThreadMin)
-    {
-        this.listenerThreadMin = listenerThreadMin;
     }
 
     public int getListenerIdleTimeoutMillis()

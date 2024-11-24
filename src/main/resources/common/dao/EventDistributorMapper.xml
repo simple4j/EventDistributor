@@ -5,9 +5,9 @@
 	<resultMap id="eventPaginationResult" type="Event">
         <result column="EVENT_ID" property="eventId"/>
         <result column="BUSINESS_RECORD_ID" property="businessRecordId"/>
-        <result column="BUSINESS_REPORT_TYPE" property="recordType"/>
-        <result column="BUSINESS_RECORD_SUB_TYPE" property="recordSubType"/>
-        <result column="BUSINESS_RECORD_VERSION" property="version"/>
+        <result column="BUSINESS_REPORT_TYPE" property="businessRecordType"/>
+        <result column="BUSINESS_RECORD_SUB_TYPE" property="businessRecordSubType"/>
+        <result column="BUSINESS_RECORD_VERSION" property="businessRecordVersion"/>
         <result column="SOURCE" property="source"/>
         <result column="STATUS" property="status"/>
         <result column="DUPLICATE_EVENT_ID" property="duplicateEventId"/>
@@ -63,57 +63,57 @@
 			a.UPDATE_BY
 		FROM (		
 			SELECT
-				EVENT_ID,
-				BUSINESS_RECORD_ID,
-				BUSINESS_REPORT_TYPE,
-				BUSINESS_RECORD_SUB_TYPE,
-				BUSINESS_RECORD_VERSION,
-				SOURCE,
-				STATUS,
-				DUPLICATE_EVENT_ID,
-				DUPLICATE_CHECK_END_TIME,
-				REPOST_PARENT_EVENT_ID,
-				PROCESSING_HOST,
-				STATUS_EXPIRY_TIME,
-				CREATE_TIME,
-				UPDATE_TIME,
-				CREATE_BY,
-				UPDATE_BY,
+				b.EVENT_ID,
+				b.BUSINESS_RECORD_ID,
+				b.BUSINESS_REPORT_TYPE,
+				b.BUSINESS_RECORD_SUB_TYPE,
+				b.BUSINESS_RECORD_VERSION,
+				b.SOURCE,
+				b.STATUS,
+				b.DUPLICATE_EVENT_ID,
+				b.DUPLICATE_CHECK_END_TIME,
+				b.REPOST_PARENT_EVENT_ID,
+				b.PROCESSING_HOST,
+				b.STATUS_EXPIRY_TIME,
+				b.CREATE_TIME,
+				b.UPDATE_TIME,
+				b.CREATE_BY,
+				b.UPDATE_BY,
 				rownum rn
-			FROM EVENT
+			FROM EVENT b
 			
 		<![CDATA[
 			WHERE rownum <= (#{startPosition} + #{numberOfRecords}) 
 		]]>
 			  <if test="eventId != null">
-			    AND EVENT_ID= #{event.eventId}
+			    AND b.EVENT_ID= #{event.eventId}
 			  </if>
               <if test="businessRecordId != null">
-                AND BUSINESS_RECORD_ID= #{event.businessRecordId}
+                AND b.BUSINESS_RECORD_ID= #{event.businessRecordId}
               </if>
               <if test="businessRecordType != null">
-                AND BUSINESS_REPORT_TYPE= #{event.businessRecordType}
+                AND b.BUSINESS_REPORT_TYPE= #{event.businessRecordType}
               </if>
               <if test="businessRecordSubType != null">
-                AND BUSINESS_RECORD_SUB_TYPE= #{event.businessRecordSubType}
+                AND b.BUSINESS_RECORD_SUB_TYPE= #{event.businessRecordSubType}
               </if>
               <if test="businessRecordVersion != null">
-                AND BUSINESS_RECORD_VERSION= #{event.businessRecordVersion}
+                AND b.BUSINESS_RECORD_VERSION= #{event.businessRecordVersion}
               </if>
               <if test="source != null">
-                AND SOURCE= #{event.source}
+                AND b.SOURCE= #{event.source}
               </if>
               <if test="status != null">
-                AND STATUS= #{event.status}
+                AND b.STATUS= #{event.status}
               </if>
               <if test="processingHost != null">
-                AND PROCESSING_HOST= #{event.processingHost}
+                AND b.PROCESSING_HOST= #{event.processingHost}
               </if>
               <if test="createBy != null">
-                AND CREATE_BY= #{event.createBy}
+                AND b.CREATE_BY= #{event.createBy}
               </if>
               <if test="updateBy != null">
-                AND UPDATE_BY= #{event.updateBy}
+                AND b.UPDATE_BY= #{event.updateBy}
               </if>
           ) a
 		<![CDATA[
@@ -121,7 +121,6 @@
 		]]>
     </select>
 
-<!-- 	public List<Event> (Event event, int startPosition, int numberOfRecords);-->
 	<select id="getEventsForDuplicateCheck" resultMap="eventResult">
 
 		SELECT
@@ -143,41 +142,41 @@
 			a.UPDATE_BY
 		FROM (		
 			SELECT
-				EVENT_ID,
-				BUSINESS_RECORD_ID,
-				BUSINESS_REPORT_TYPE,
-				BUSINESS_RECORD_SUB_TYPE,
-				BUSINESS_RECORD_VERSION,
-				SOURCE,
-				STATUS,
-				DUPLICATE_EVENT_ID,
-				DUPLICATE_CHECK_END_TIME,
-				REPOST_PARENT_EVENT_ID,
-				PROCESSING_HOST,
-				STATUS_EXPIRY_TIME,
-				CREATE_TIME,
-				UPDATE_TIME,
-				CREATE_BY,
-				UPDATE_BY,
+				b.EVENT_ID,
+				b.BUSINESS_RECORD_ID,
+				b.BUSINESS_REPORT_TYPE,
+				b.BUSINESS_RECORD_SUB_TYPE,
+				b.BUSINESS_RECORD_VERSION,
+				b.SOURCE,
+				b.STATUS,
+				b.DUPLICATE_EVENT_ID,
+				b.DUPLICATE_CHECK_END_TIME,
+				b.REPOST_PARENT_EVENT_ID,
+				b.PROCESSING_HOST,
+				b.STATUS_EXPIRY_TIME,
+				b.CREATE_TIME,
+				b.UPDATE_TIME,
+				b.CREATE_BY,
+				b.UPDATE_BY,
 				rownum rn
-			FROM EVENT
+			FROM EVENT b
 			
 		<![CDATA[
 			WHERE rownum <= (#{startPosition} + #{numberOfRecords}) 
-			  AND DUPLICATE_CHECK_END_TIME > #{event.createTime}
-			  AND STATUS != 'ABORT'
+			  AND b.DUPLICATE_CHECK_END_TIME > #{event.createTime}
+			  AND b.STATUS != 'ABORT'
 		]]>
-              <if test="businessRecordId != null">
-                AND BUSINESS_RECORD_ID= #{event.businessRecordId}
+              <if test="event.businessRecordId != null">
+                AND b.BUSINESS_RECORD_ID= #{event.businessRecordId}
               </if>
-              <if test="businessRecordType != null">
-                AND BUSINESS_REPORT_TYPE= #{event.businessRecordType}
+              <if test="event.businessRecordType != null">
+                AND b.BUSINESS_REPORT_TYPE= #{event.businessRecordType}
               </if>
-              <if test="businessRecordSubType != null">
-                AND BUSINESS_RECORD_SUB_TYPE= #{event.businessRecordSubType}
+              <if test="event.businessRecordSubType != null">
+                AND b.BUSINESS_RECORD_SUB_TYPE= #{event.businessRecordSubType}
               </if>
-              <if test="businessRecordVersion != null">
-                AND BUSINESS_RECORD_VERSION= #{event.businessRecordVersion}
+              <if test="event.businessRecordVersion != null">
+                AND b.BUSINESS_RECORD_VERSION= #{event.businessRecordVersion}
               </if>
           ) a
 		<![CDATA[
@@ -189,10 +188,10 @@
 	
 	<insert id="insertEvent" parameterType="Event">
         	INSERT INTO EVENT (EVENT_ID,BUSINESS_RECORD_ID,BUSINESS_REPORT_TYPE,BUSINESS_RECORD_SUB_TYPE,BUSINESS_RECORD_VERSION,SOURCE,STATUS,DUPLICATE_EVENT_ID,DUPLICATE_CHECK_END_TIME,REPOST_PARENT_EVENT_ID,PROCESSING_HOST,STATUS_EXPIRY_TIME,CREATE_TIME,UPDATE_TIME,CREATE_BY,UPDATE_BY) 
-        	VALUES (#{eventId},#{businessRecordId},#{recordType},#{recordSubType},#{version},#{source},#{status},#{duplicateEventId},#{duplicateCheckEndTime},#{repostParentEventId},#{processingHost},#{statusExpiryTime},#{createTime},#{updateTime},#{createBy},#{updateBy})
+        	VALUES (#{event.eventId},#{event.businessRecordId},#{event.businessRecordType},#{event.businessRecordSubType},#{event.businessRecordVersion},#{event.source},#{event.status},#{event.duplicateEventId},#{event.duplicateCheckEndTime},#{event.repostParentEventId},#{event.processingHost},#{event.statusExpiryTime},#{event.createTime},#{event.updateTime},#{event.createBy},#{event.updateBy})
     </insert>
 
-	<select id="getEventId" resultType="java.lang.Integer">
+	<select id="getEventId" resultType="java.lang.Long">
 		<![CDATA[
 			SELECT EVENT_SEQ.nextval
 			FROM DUAL
@@ -201,10 +200,10 @@
 
 	<insert id="insertPublishAttempt" parameterType="PublishAttempt">
         	INSERT INTO PUBLISH_ATTEMPT (PUBLISH_ID, EVENT_ID, TARGET_ID, RESPONSE_HTTP_CODE, RESPONSE_BODY, ERROR_DETAILS, STATUS, CREATE_TINME, UPDATE_TIME, CREATED_BY) 
-        	VALUES (#{publishId},#{eventId},#{targetId},#{responseHttpCode},#{responseBody},#{errorDetails},#{publishAttemptStatus},#{createTime},#{updateTime},#{createBy})
+        	VALUES (#{publishAttempt.publishId},#{publishAttempt.eventId},#{publishAttempt.targetId},#{publishAttempt.responseHttpCode},#{publishAttempt.responseBody},#{publishAttempt.errorDetails},#{publishAttempt.publishAttemptStatus},#{publishAttempt.createTime},#{publishAttempt.updateTime},#{publishAttempt.createBy})
     </insert>
 
-	<select id="getPublishAttemptId" resultType="java.lang.Integer">
+	<select id="getPublishAttemptId" resultType="java.lang.Long">
 		<![CDATA[
 			SELECT PUBLISH_ATTEMPT_SEQ.nextval
 			FROM DUAL
@@ -214,24 +213,24 @@
 	<select id="getEvent" parameterType="java.lang.Integer" resultMap="eventResult">
 		<![CDATA[
 			SELECT
-				EVENT_ID,
-				BUSINESS_RECORD_ID,
-				BUSINESS_REPORT_TYPE,
-				BUSINESS_RECORD_SUB_TYPE,
-				BUSINESS_RECORD_VERSION,
-				SOURCE,
-				STATUS,
-				DUPLICATE_EVENT_ID,
-				DUPLICATE_CHECK_END_TIME,
-				REPOST_PARENT_EVENT_ID,
-				PROCESSING_HOST,
-				STATUS_EXPIRY_TIME,
-				CREATE_TIME,
-				UPDATE_TIME,
-				CREATE_BY,
-				UPDATE_BY
-			FROM EVENT
-			WHERE EVENT_ID = #{eventId}
+				b.EVENT_ID,
+				b.BUSINESS_RECORD_ID,
+				b.BUSINESS_REPORT_TYPE,
+				b.BUSINESS_RECORD_SUB_TYPE,
+				b.BUSINESS_RECORD_VERSION,
+				b.SOURCE,
+				b.STATUS,
+				b.DUPLICATE_EVENT_ID,
+				b.DUPLICATE_CHECK_END_TIME,
+				b.REPOST_PARENT_EVENT_ID,
+				b.PROCESSING_HOST,
+				b.STATUS_EXPIRY_TIME,
+				b.CREATE_TIME,
+				b.UPDATE_TIME,
+				b.CREATE_BY,
+				b.UPDATE_BY
+			FROM EVENT b
+			WHERE b.EVENT_ID = #{eventId}
 		]]>
     </select>
 
@@ -243,39 +242,39 @@
 		]]>
     </select>
 
-	<select id="selectPublishAttemptFromEvent" parameterType="java.lang.Integer" resultMap="PublishAttempt">
+	<select id="selectPublishAttemptFromEvent" parameterType="java.lang.Integer" resultMap="publishAttemptResult">
 		<![CDATA[
 			SELECT
-				PUBLISH_ID,
-				EVENT_ID,
-				TARGET_ID,
-				RESPONSE_HTTP_CODE,
-				RESPONSE_BODY,
-				ERROR_DETAILS,
-				STATUS,
-				CREATE_TINME,
-				UPDATE_TIME,
-				CREATED_BY
-			FROM PUBLISH_ATTEMPT
-			WHERE EVENT_ID = #{EVENT_ID}
+				b.PUBLISH_ID,
+				b.EVENT_ID,
+				b.TARGET_ID,
+				b.RESPONSE_HTTP_CODE,
+				b.RESPONSE_BODY,
+				b.ERROR_DETAILS,
+				b.STATUS,
+				b.CREATE_TINME,
+				b.UPDATE_TIME,
+				b.CREATED_BY
+			FROM PUBLISH_ATTEMPT b
+			WHERE b.EVENT_ID = #{EVENT_ID}
 		]]>
     </select>
 
-	<select id="getPublishAttempt" parameterType="java.lang.Integer" resultMap="PublishAttempt">
+	<select id="getPublishAttempt" parameterType="java.lang.Integer" resultMap="publishAttemptResult">
 		<![CDATA[
 			SELECT
-				PUBLISH_ID,
-				EVENT_ID,
-				TARGET_ID,
-				RESPONSE_HTTP_CODE,
-				RESPONSE_BODY,
-				ERROR_DETAILS,
-				STATUS,
-				CREATE_TINME,
-				UPDATE_TIME,
-				CREATED_BY
-			FROM PUBLISH_ATTEMPT
-			WHERE PUBLISH_ID = #{publishId}
+				b.PUBLISH_ID,
+				b.EVENT_ID,
+				b.TARGET_ID,
+				b.RESPONSE_HTTP_CODE,
+				b.RESPONSE_BODY,
+				b.ERROR_DETAILS,
+				b.STATUS,
+				b.CREATE_TINME,
+				b.UPDATE_TIME,
+				b.CREATED_BY
+			FROM PUBLISH_ATTEMPT b
+			WHERE b.PUBLISH_ID = #{publishId}
 		]]>
     </select>
 
@@ -287,33 +286,39 @@
 	<update id="lockEvents">
 		<![CDATA[
             UPDATE EVENT
-            SET STATUS='IN_PROGRESS', PROCESSING_HOST = #{hostname}, STATUS_EXPIRY_TIME = #{statusExpiryTime}, UPDATE_TIME = #{currentTime}, UPDATE_BYE = 'EventFetcher'
-            WHERE EVENT_ID IN (SELECT EVENT_ID FROM EVENT WHERE rownum < #{batchSize} AND (STATUS='NEW' OR (STATUS='IN_PROGRESS' AND STATUS_EXPIRY_TIME<#{currentTime})))
+            SET STATUS='IN_PROGRESS', PROCESSING_HOST = #{hostname}, 
+            STATUS_EXPIRY_TIME = #{statusExpiryTimeZonedDateTime}, 
+            UPDATE_TIME = #{currentTime}, 
+            UPDATE_BY = 'EventFetcher'
+            WHERE EVENT_ID IN (SELECT EVENT_ID FROM EVENT WHERE rownum < #{batchSize} AND 
+            												STATUS IN ('NEW','IN_PROGRESS') AND 
+            												NVL(STATUS_EXPIRY_TIME, #{currentTime})<=#{currentTime}
+            				  )
 		]]>
     </update>
 
 	<select id="fetchLockedEvents" parameterType="java.lang.String" resultMap="eventResult">
 		<![CDATA[
 			SELECT
-				EVENT_ID,
-				BUSINESS_RECORD_ID,
-				BUSINESS_REPORT_TYPE,
-				BUSINESS_RECORD_SUB_TYPE,
-				BUSINESS_RECORD_VERSION,
-				SOURCE,
-				STATUS,
-				DUPLICATE_EVENT_ID,
-				DUPLICATE_CHECK_END_TIME,
-				REPOST_PARENT_EVENT_ID,
-				PROCESSING_HOST,
-				STATUS_EXPIRY_TIME,
-				CREATE_TIME,
-				UPDATE_TIME,
-				CREATE_BY,
-				UPDATE_BY
-			FROM EVENT
-			WHERE PROCESSING_HOST = #{hostname}
-			  AND STATUS = 'IN_PROGRESS'
+				b.EVENT_ID,
+				b.BUSINESS_RECORD_ID,
+				b.BUSINESS_REPORT_TYPE,
+				b.BUSINESS_RECORD_SUB_TYPE,
+				b.BUSINESS_RECORD_VERSION,
+				b.SOURCE,
+				b.STATUS,
+				b.DUPLICATE_EVENT_ID,
+				b.DUPLICATE_CHECK_END_TIME,
+				b.REPOST_PARENT_EVENT_ID,
+				b.PROCESSING_HOST,
+				b.STATUS_EXPIRY_TIME,
+				b.CREATE_TIME,
+				b.UPDATE_TIME,
+				b.CREATE_BY,
+				b.UPDATE_BY
+			FROM EVENT b
+			WHERE b.PROCESSING_HOST = #{hostname}
+			  AND b.STATUS = 'IN_PROGRESS'
 		]]>
     </select>
 
@@ -328,7 +333,6 @@
             WHERE PUBLISH_ATTEMPT_ID = #{publishAttempt.publishAttemptId}
 		]]>
     </update>
-	public void ( );
 
 	<update id="updateEvent" parameterType="Event">
 		<![CDATA[

@@ -4,6 +4,7 @@
     "request": {
         "method": "GET",
         "urlPattern": "/system1/cacheclear/entry.json?key=${businessRecordId}&type=${businessRecordType}&refresh=true",
+        "body": "",
         "staticHeaders": {
             "accept": "application/json",
             "Content-Type": "application/json"

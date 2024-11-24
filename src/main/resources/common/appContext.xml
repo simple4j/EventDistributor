@@ -24,8 +24,7 @@
                            http://www.springframework.org/schema/util/spring-util.xsd">
     
 	<context:property-placeholder
-		location="classpath:env.properties,
-          		classpath:region.properties"
+		location="classpath:env.properties"
 		ignore-unresolvable="true" />
 <!-- 
 -->

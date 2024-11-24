@@ -8,16 +8,15 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.simple4j.eventdistributor.beans.AppResponse;
-import org.simple4j.eventdistributor.beans.ErrorDetails;
-import org.simple4j.eventdistributor.beans.ErrorDetails.ErrorType;
+import org.simple4j.apiaopvalidator.beans.AppResponse;
+import org.simple4j.apiaopvalidator.beans.ErrorDetails;
+import org.simple4j.eventdistributor.beans.ErrorType;
 import org.simple4j.eventdistributor.beans.Event;
 import org.simple4j.eventdistributor.beans.EventStatus;
 import org.simple4j.eventdistributor.beans.HealthCheck;
@@ -27,7 +26,6 @@ import org.simple4j.eventdistributor.dao.EventDistributorMapper;
 import org.simple4j.eventdistributor.japi.EventDistributorService;
 import org.simple4j.eventdistributor.japi.EventTargetRule;
 import org.simple4j.eventdistributor.tasks.EventFetcher;
-import org.simple4j.wsclient.caller.Caller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +38,7 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	private String groupId = null;
 	private String artifactId = null;
 	private String version = null;
-	private LinkedList<EventTargetRule> eventTargetRules = null;
+	private List<EventTargetRule> eventTargetRules = null;
 	private EventDistributorMapper eventDistributorMapper = null;
 	private int duplicateCheckExpiryMillisec = 300000;
 	
@@ -82,12 +80,12 @@ public class EventDistributorServiceImpl implements EventDistributorService
 		this.version = version;
 	}
 
-	public LinkedList<EventTargetRule> getEventTargetRules()
+	public List<EventTargetRule> getEventTargetRules()
 	{
 		return eventTargetRules;
 	}
 
-	public void setEventTargetRules(LinkedList<EventTargetRule> eventTargetRules)
+	public void setEventTargetRules(List<EventTargetRule> eventTargetRules)
 	{
 		this.eventTargetRules = eventTargetRules;
 	}
@@ -195,14 +193,15 @@ public class EventDistributorServiceImpl implements EventDistributorService
 			throw new RuntimeException(e);
 		}
 
-		Instant duplicateCheckEndTimeInstant = Instant.ofEpochMilli(System.currentTimeMillis() + this.getDuplicateCheckExpiryMillisec());
-		ZonedDateTime duplicateCheckEndTimeZonedDateTime = ZonedDateTime.ofInstant(duplicateCheckEndTimeInstant, ZoneId.systemDefault());
 		inputClone.setCreateTime(ZonedDateTime.now());
 		
+		//Fetch first 100 non-abort records with duplicationcheck end tike in the future and matching business record id/type/subtype/version
+		//duplicates can be from different sources
 		List<Event> events = this.getEventDistributorMapper().getEventsForDuplicateCheck(inputClone, 1, 100);
 		
 		if(events != null && events.size() > 0)
 		{
+			//mark the incoming event as duplicate with the same duplicate check end time as original event and duplicate event id of the first event
 			for (Event eventFromDB : events)
 			{
 				event.setDuplicateCheckEndTime(eventFromDB.getDuplicateCheckEndTime());
@@ -221,7 +220,11 @@ public class EventDistributorServiceImpl implements EventDistributorService
 		}
 		else
 		{
+			//not duplicate case
 			event.setStatus(EventStatus.NEW);
+
+			Instant duplicateCheckEndTimeInstant = Instant.ofEpochMilli(System.currentTimeMillis() + this.getDuplicateCheckExpiryMillisec());
+			ZonedDateTime duplicateCheckEndTimeZonedDateTime = ZonedDateTime.ofInstant(duplicateCheckEndTimeInstant, ZoneId.systemDefault());
 			event.setDuplicateCheckEndTime(duplicateCheckEndTimeZonedDateTime);
 			
 			//For a given source system, there can be a cooling time to wait for the record to be processed as the system may send duplicate events
@@ -242,7 +245,7 @@ public class EventDistributorServiceImpl implements EventDistributorService
 		{
 			ret.errorDetails = new ErrorDetails();
 			ret.errorDetails.errorId = System.currentTimeMillis() + "@" + this.getEventFetcher().getHostName();
-			ret.errorDetails.errorType = ErrorType.DUPLICATE_REQUEST;
+			ret.errorDetails.errorType = ErrorType.DUPLICATE_REQUEST.toString();
 			ret.errorDetails.errorDescription = "Another event with the same business record.";
 		}
 		else
@@ -265,9 +268,10 @@ public class EventDistributorServiceImpl implements EventDistributorService
 			LOGGER.warn("No eventTargetRules is not configured");
 			return null;
 		}
-		for (EventTargetRule eventTargetRule : this.getEventTargetRules())
+		for (int i=0 ; i < this.getEventTargetRules().size() ; i++)
 		{
-			if(eventTargetRule.eval(event))
+			EventTargetRule eventTargetRule = this.getEventTargetRules().get(i);
+			if(eventTargetRule .eval(event))
 				return eventTargetRule.getTargetIds();
 		}
 		
@@ -328,7 +332,7 @@ public class EventDistributorServiceImpl implements EventDistributorService
 		{
 			ret.errorDetails = new ErrorDetails();
 			ret.errorDetails.errorId = System.currentTimeMillis()+"@"+ this.getEventFetcher().getHostName();
-			ret.errorDetails.errorType = ErrorType.EVENT_INPROGRESS;
+			ret.errorDetails.errorType = ErrorType.EVENT_INPROGRESS.toString();
 			ret.errorDetails.errorDescription = "The event is currently being processed and cannot republish";
 		}
 		else
@@ -357,7 +361,7 @@ public class EventDistributorServiceImpl implements EventDistributorService
 		{
 			ErrorDetails ed = new ErrorDetails();
 			ed.errorId = System.currentTimeMillis() +"@@"+this.hostName;
-			ed.errorType = ErrorDetails.ErrorType.EVENT_NOTFOUND;
+			ed.errorType = ErrorType.EVENT_NOTFOUND.toString();
 			ed.errorDescription = "Event missing in db. Cant abort";
 			ret.errorDetails = ed ;
 			LOGGER.error("Returning error response : {}", ret);

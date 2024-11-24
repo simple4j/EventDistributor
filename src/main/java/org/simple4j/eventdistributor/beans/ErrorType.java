@@ -1,0 +1,6 @@
+package org.simple4j.eventdistributor.beans;
+
+public enum ErrorType
+{
+	PARAMETER_ERROR,EVENT_NOTFOUND,CALLER_NOTAUTHORIZED,EVENT_INPROGRESS,RUNTIME_ERROR,DUPLICATE_REQUEST
+}

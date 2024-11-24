@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
-public class WSCallerExecutor implements Callable<Boolean>
+public class WSCallerExecutor implements Callable<Boolean>, Comparable<WSCallerExecutor>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
@@ -85,6 +85,21 @@ public class WSCallerExecutor implements Callable<Boolean>
 			LOGGER.error("Error while updating publish attempt {}", this.publishAttempt, t);
 		}
 		return ret;
+	}
+
+	@Override
+	public int compareTo(WSCallerExecutor o)
+	{
+		if(this.event != null && this.event.getUpdateTime() != null && o.event != null && o.event.getUpdateTime() != null)
+			return this.event.getUpdateTime().compareTo(o.event.getUpdateTime());
+		else
+			if(this.event != null && this.event.getCreateTime() != null && o.event != null && o.event.getCreateTime() != null)
+				return this.event.getCreateTime().compareTo(o.event.getCreateTime());
+			else
+				if(this.event != null && this.event.getEventId() != null && o.event != null && o.event.getEventId() != null)
+					return this.event.getEventId().compareTo(o.event.getEventId());
+				else
+					return 0;
 	}
 
 }

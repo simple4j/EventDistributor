@@ -3,37 +3,39 @@ package org.simple4j.eventdistributor.dao;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+import org.apache.ibatis.annotations.Param;
+
 import org.simple4j.eventdistributor.beans.Event;
 import org.simple4j.eventdistributor.beans.PublishAttempt;
 
 public interface EventDistributorMapper
 {
 
-	public List<Event> getEvents(Event event, int startPosition, int numberOfRecords);
+	public List<Event> getEvents(@Param("event") Event event, @Param("startPosition") int startPosition, @Param("numberOfRecords") int numberOfRecords);
 
-	public void insertEvent(Event event);
+	public void insertEvent(@Param("event") Event event);
 
 	public Long getEventId();
 
-	public void insertPublishAttempt(PublishAttempt publishAttempt);
+	public void insertPublishAttempt(@Param("publishAttempt") PublishAttempt publishAttempt);
 
 	public Long getPublishAttemptId();
 
-	public Event getEvent(long eventId);
+	public Event getEvent(@Param("eventId") long eventId);
 
-	public PublishAttempt getPublishAttempt(long publishId);
+	public PublishAttempt getPublishAttempt(@Param("publishId") long publishId);
 
-	public void insertEventTarget(Long eventId, String targetId);
+	public void insertEventTarget(@Param("eventId") Long eventId, @Param("targetId") String targetId);
 
-	public void lockEvents(String hostname, int batchSize, ZonedDateTime statusExpiryTimeZonedDateTime, ZonedDateTime currentTime);
+	public void lockEvents(@Param("hostname") String hostname, @Param("batchSize") int batchSize, @Param("statusExpiryTimeZonedDateTime") ZonedDateTime statusExpiryTimeZonedDateTime, @Param("currentTime") ZonedDateTime currentTime);
 
-	public List<Event> fetchLockedEvents(String hostname);
+	public List<Event> fetchLockedEvents(@Param("hostname") String hostname);
 
-	public void updatePublishAttempt(PublishAttempt publishAttempt);
+	public void updatePublishAttempt(@Param("publishAttempt") PublishAttempt publishAttempt);
 
-	public void updateEvent(Event event);
+	public void updateEvent(@Param("event") Event event);
 
-	public List<Event> getEventsForDuplicateCheck(Event event, int startPosition, int numberOfRecords);
+	public List<Event> getEventsForDuplicateCheck(@Param("event") Event event, @Param("startPosition") int startPosition, @Param("numberOfRecords") int numberOfRecords);
 
 
 }

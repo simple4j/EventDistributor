@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans.xsd
+                        http://www.springframework.org/schema/context
+                        http://www.springframework.org/schema/context/spring-context.xsd
+                        http://www.springframework.org/schema/util
+						http://www.springframework.org/schema/util/spring-util-3.1.xsd">
+
+	<bean id="putCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
+		<property name="httpWSClient" ref="httpWSClient"></property>
+		<property name="jSONConfig">
+			<value>
+				<![CDATA[
+{
+	"freemarkerEncoding":"UTF-8",
+	"freemarkerVersion":"2.3.23",
+    "request": {
+        "method": "PUT",
+        "urlPattern": "/user",
+        "body": "{\"displayName\":\"${displayNameVar}\",\"gender\":\"${gender}\",\"birthYear\":${birthYear},\"birthMonth\":${birthMonth}}",
+        "staticHeaders": {
+            "Content-Type": "application/JSON"
+        },
+        "headers": {
+            "x-header1": "${testProperty1}",
+            "x-header2": "${testProperty2}"
+        }
+    },
+    "response": {
+        "responseBodyToCustomFieldMapping": {
+            "responsevalue1": "responsevalue"
+        }
+    }
+}
+				]]>
+			</value>
+		</property>
+		<property name="responseBodyParsers">
+			<map>
+				<entry key="(200)" value-ref="successBodyParser"></entry>
+			</map>
+		</property>
+	</bean>
+
+	<!-- {} -->
+	<bean id="successBodyParser" class="org.simple4j.wsclient.parser.impl.JSONParser">
+	</bean>
+
+</beans>

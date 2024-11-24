@@ -4,6 +4,7 @@
     "request": {
         "method": "GET",
         "urlPattern": "/system2/refresh/entry.json?k=${businessRecordId}&t=${businessRecordType}",
+        "body": "",
         "staticHeaders": {
             "accept": "application/json",
             "Content-Type": "application/json"

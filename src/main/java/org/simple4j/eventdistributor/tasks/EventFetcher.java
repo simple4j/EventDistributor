@@ -131,12 +131,11 @@ public class EventFetcher implements Runnable
 
 	public ThreadPoolExecutor getDistributionExecutor()
 	{
-		Comparator<? super Runnable> a = new Comparator<? super Runnable>() {};
 		if(this.distributionExecutor == null)
 			distributionExecutor = new ThreadPoolExecutor(this.distributionExecutorCoreThreadPoolSize, 
 					this.distributionExecutorMaxThreadPoolSize, 
 					this.distributionExecutorKeepaliveSeconds, 
-					TimeUnit.SECONDS, new PriorityBlockingQueue<Runnable>(this.distributionExecutorQueueSize, a), 
+					TimeUnit.SECONDS, new PriorityBlockingQueue<Runnable>(this.distributionExecutorQueueSize), 
 					new ThreadPoolExecutor.CallerRunsPolicy());
 		return distributionExecutor;
 	}
@@ -165,6 +164,8 @@ public class EventFetcher implements Runnable
 		ZonedDateTime statusExpiryTimeZonedDateTime = ZonedDateTime.ofInstant(statusExpiryTimeInstant, ZoneId.systemDefault());
 		
 		ZonedDateTime currentTime = ZonedDateTime.now();
+		//update NEW to INPROGRESS with status expiry
+		//update any INPROGRESS with status expired to current host and new status expiry
 		this.getEventDistributorMapper().lockEvents(this.getHostName(), this.getMaxFetchRecordCountPerBatch(), statusExpiryTimeZonedDateTime, currentTime);
 		List<Event> events = this.getEventDistributorMapper().fetchLockedEvents(this.getHostName());
 		
@@ -173,6 +174,7 @@ public class EventFetcher implements Runnable
 
 			Map<String, PublishAttempt> targetId2PublishAttempt = new HashMap<String, PublishAttempt>();
 			
+			//Below loop is to process any stuck publish events
 			for (Iterator<PublishAttempt> iterator = event.getPublishAttempts().iterator(); iterator.hasNext();)
 			{
 				PublishAttempt pa = iterator.next();
@@ -186,12 +188,13 @@ public class EventFetcher implements Runnable
 			List<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
 			for (String targetId : targetIds)
 			{
-				Event eventFromDB = this.eventDistributorMapper.getEvent(event.getEventId());
+				Event eventFromDB = this.getEventDistributorMapper().getEvent(event.getEventId());
 				if(eventFromDB.getStatus().equals(EventStatus.ABORT))
 					break;
 				PublishAttempt publishAttempt = targetId2PublishAttempt.get(targetId);
 				if(publishAttempt == null)
 				{
+					//Publish attempt record does not exists, create a new attempt
 					publishAttempt = new PublishAttempt();
 					publishAttempt.setPublishId(this.getEventDistributorMapper().getPublishAttemptId());
 					publishAttempt.setCreateBy(event.getCreateBy());
