@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                        http://www.springframework.org/schema/beans/spring-beans.xsd
+                        http://www.springframework.org/schema/context 
+                        http://www.springframework.org/schema/context/spring-context.xsd
+                        http://www.springframework.org/schema/util
+						http://www.springframework.org/schema/util/spring-util-3.1.xsd">
+
+	<bean id="daoHTTPWSClient" class="org.simple4j.wsclient.http.HTTPWSClient">
+		<property name="connectionTimeOutMillis" value="10000"></property>
+		<property name="maxConnectionsPerHost" value="2"></property>
+		<property name="numberOfRetries" value="2"></property>
+		<property name="serviceHostName" value="localhost"></property>
+		<property name="servicePortNumber" value="2411"></property>
+		<property name="serviceProtocol" value="http"></property>
+		<property name="socketTimeOutMillis" value="30000"></property>
+	</bean>
+ 
+	<bean id="getEventdaoPostCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
+		<!-- Same http cliecnt can be used for webservice and also for POJOASHTTP-->
+		<property name="httpWSClient" ref="daoHTTPWSClient"></property>
+		<property name="jSONConfig">
+			<value>
+				<![CDATA[
+{
+	"freemarkerEncoding":"UTF-8",
+	"freemarkerVersion":"2.3.23",
+    "request": {
+        "method": "POST",
+        "urlPattern": "/pojoashttp/request.json",
+        "body": "{\"beanId\":\"eventDistributorMapper\",\"methodName\":\"getEvents\",\"methodParameters\":[{\"className\":\"org.simple4j.eventdistributor.beans.Event\",\"valueJSON\":{\"businessRecordId\":\"${businessRecordId}\", \"businessRecordType\":\"${businessRecordType}\"} }, {\"className\":\"java.lang.Integer.TYPE\",\"value\":\"1\" }, {\"className\":\"java.lang.Integer.TYPE\",\"value\":\"10\" }   ]}",
+        "staticHeaders": {
+            "Content-Type": "application/JSON"
+        },
+        "headers": {
+        }
+    },
+    "response": {
+        "responseBodyToCustomFieldMapping": {
+            "responsevalue1": "responsevalue"
+        }
+    }
+}
+				]]>
+			</value>
+		</property>
+		<property name="responseBodyParsers">
+			<map>
+				<entry key="(200)" value-ref="successBodyParser"></entry>
+			</map>
+		</property>
+	</bean>
+
+	<!-- {} -->
+	<bean id="successBodyParser" class="org.simple4j.wsclient.parser.impl.JSONParser">
+	</bean>
+
+</beans>

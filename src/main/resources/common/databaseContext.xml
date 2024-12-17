@@ -31,7 +31,7 @@
 		<property name="minimumIdle" value="5"></property>
 		<property name="dataSourceProperties">
 			<props>
-				<prop key="oracle.jdbc.ReadTimeout">10000ms</prop>
+				<prop key="oracle.jdbc.ReadTimeout">30000ms</prop>
 			</props>
 		</property>
 	</bean>

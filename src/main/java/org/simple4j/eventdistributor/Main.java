@@ -25,6 +25,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -43,6 +44,8 @@ public class Main
     private static final String START_TIME_MILLISEC = "startTimeMillisec";
 
     private static Main main = null;
+    
+    public static boolean pauseEventFetcher = false;
 
     private int listenerPortNumber = 2410;
     private int listenerIdleTimeoutMillis = 600000;
@@ -72,6 +75,17 @@ public class Main
     {
         LOGGER.info("EventDistributor is starting, please wait...");
 
+        if(args.length>0)
+        {
+        	try
+        	{
+	        	pauseEventFetcher = Boolean.parseBoolean(args[0]);
+        	}
+        	catch(Throwable t)
+        	{
+        		LOGGER.warn("Error while parsing arguments", t);
+        	}
+        }
         context = new ClassPathXmlApplicationContext("appContext.xml");
 
         main = context.getBean("main", Main.class);
@@ -154,6 +168,13 @@ public class Main
                 throw new RuntimeException("Error parsing request body <" + bodyJson +">",  e);
             }
             main.getEventDistributorService().setHealthCheck(healthCheckReq.status);
+            setHeader(ctx);
+            ctx.result("{}");
+        });
+
+        javalin.post(main.getUrlBase()+"/eventFetcherTrigger.json", ctx -> 
+        {
+        	pauseEventFetcher = false;
             setHeader(ctx);
             ctx.result("{}");
         });
@@ -372,6 +393,7 @@ public class Main
 
     private void init()
     {
+    	OBJECT_MAPPER.registerModule(new JavaTimeModule());
     	try
 		{
 			this.hostName = InetAddress.getLocalHost().getHostName();
@@ -429,7 +451,12 @@ public class Main
         MDC.clear();
     }
     
-    public int getListenerPortNumber()
+    public static ApplicationContext getContext()
+	{
+		return context;
+	}
+
+	public int getListenerPortNumber()
     {
         return listenerPortNumber;
     }

@@ -18,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 public class WSCallerExecutor implements Callable<Boolean>, Comparable<WSCallerExecutor>
 {
@@ -35,6 +36,7 @@ public class WSCallerExecutor implements Callable<Boolean>, Comparable<WSCallerE
 
 	public WSCallerExecutor(Caller caller, Event event, PublishAttempt publishAttempt, EventDistributorMapper eventDistributorMapper, String successResponseMatchRegexPattern)
 	{
+    	OBJECT_MAPPER.registerModule(new JavaTimeModule());
 		this.caller = caller;
 		this.event = event;
 		this.publishAttempt = publishAttempt;

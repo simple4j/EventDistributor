@@ -14,14 +14,4 @@
 	<import resource="postEvent.xml" />
 	<import resource="get.xml" />
 
-	<bean id="httpWSClient" class="org.simple4j.wsclient.http.HTTPWSClient">
-		<property name="connectionTimeOutMillis" value="1000"></property>
-		<property name="maxConnectionsPerHost" value="2"></property>
-		<property name="numberOfRetries" value="2"></property>
-		<property name="serviceHostName" value="localhost"></property>
-		<property name="servicePortNumber" value="2410"></property>
-		<property name="serviceProtocol" value="http"></property>
-		<property name="socketTimeOutMillis" value="10000"></property>
-	</bean>
- 
 </beans>

@@ -43,6 +43,11 @@
 						<entry key="" value="200"/>
 					</map>
 				</entry>
+				<entry key="DUPLICATE_REQUEST">
+					<map>
+						<entry key="" value="208"/>
+					</map>
+				</entry>
 				<entry key="PARAMETER_ERROR">
 					<map>
 						<entry key="" value="412"/>
@@ -92,7 +97,7 @@
 	<util:list id="eventTargetRules">
 		<bean id="rule1" class="org.simple4j.eventdistributor.japi.impl.MvelEventTargetRule">
 			<!-- https://ftpdocs.broadcom.com/cadocs/0/CA%20Performance%20Management%20Data%20Aggregator%202%204-ENU/Bookshelf_Files/HTML/caim_PowerUser_Certification_ENU/operators.html -->
-			<property name="mvelExpression"><value><![CDATA[ businessRecordType!= null && "AA".equals(businessRecordType) ]]></value></property>
+			<property name="mvelExpression"><value><![CDATA[ businessRecordType!= null && "USER".equals(businessRecordType) ]]></value></property>
 			<property name="targetIds">
 				<list>
 					<value>system1</value>
@@ -136,6 +141,8 @@
 
 	<aop:config proxy-target-class="true">
 	    <aop:advisor advice-ref="methodLoggingInterceptor" pointcut="execution(public * org.simple4j.eventdistributor..*.*(..))"/>
+	    <aop:advisor advice-ref="methodLoggingInterceptor" pointcut="execution(public * org.simple4j.apiaopvalidator..*.*(..))"/>
+	    
 	</aop:config>
 
 </beans>

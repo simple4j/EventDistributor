@@ -83,41 +83,42 @@
 			FROM EVENT b
 			
 		<![CDATA[
-			WHERE rownum <= (#{startPosition} + #{numberOfRecords}) 
+			WHERE rownum <= (#{startPosition} + #{numberOfRecords} - 1) 
 		]]>
-			  <if test="eventId != null">
+			  <if test="event.eventId != null">
 			    AND b.EVENT_ID= #{event.eventId}
 			  </if>
-              <if test="businessRecordId != null">
+              <if test="event.businessRecordId != null">
                 AND b.BUSINESS_RECORD_ID= #{event.businessRecordId}
               </if>
-              <if test="businessRecordType != null">
+              <if test="event.businessRecordType != null">
                 AND b.BUSINESS_REPORT_TYPE= #{event.businessRecordType}
               </if>
-              <if test="businessRecordSubType != null">
+              <if test="event.businessRecordSubType != null">
                 AND b.BUSINESS_RECORD_SUB_TYPE= #{event.businessRecordSubType}
               </if>
-              <if test="businessRecordVersion != null">
+              <if test="event.businessRecordVersion != null">
                 AND b.BUSINESS_RECORD_VERSION= #{event.businessRecordVersion}
               </if>
-              <if test="source != null">
+              <if test="event.source != null">
                 AND b.SOURCE= #{event.source}
               </if>
-              <if test="status != null">
+              <if test="event.status != null">
                 AND b.STATUS= #{event.status}
               </if>
-              <if test="processingHost != null">
+              <if test="event.processingHost != null">
                 AND b.PROCESSING_HOST= #{event.processingHost}
               </if>
-              <if test="createBy != null">
+              <if test="event.createBy != null">
                 AND b.CREATE_BY= #{event.createBy}
               </if>
-              <if test="updateBy != null">
+              <if test="event.updateBy != null">
                 AND b.UPDATE_BY= #{event.updateBy}
               </if>
           ) a
 		<![CDATA[
           WHERE a.rn >= #{startPosition}
+          ORDER BY a.CREATE_TIME DESC
 		]]>
     </select>
 

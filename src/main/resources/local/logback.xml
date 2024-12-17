@@ -16,7 +16,7 @@
 	 <logger name="org.eclipse.jetty" level="INFO">
 	</logger>
 
-	<logger name="org.simple4j.eventdistributor.interceptor.MethodLoggingInterceptor" level="DEBUG">
+	<logger name="org.simple4j.eventdistributor.interceptor.MethodLoggingInterceptor" level="INFO">
 	</logger>
 	
 	<logger name="org.simple4j.eventdistributor.dao" level="DEBUG" />

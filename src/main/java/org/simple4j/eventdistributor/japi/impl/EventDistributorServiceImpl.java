@@ -157,7 +157,7 @@ public class EventDistributorServiceImpl implements EventDistributorService
 		}
         this.eventFetcherExecutor = new ScheduledThreadPoolExecutor(this.getEventFetcherExecutorCoreThreadPoolSize());
         this.eventFetcherExecutor.scheduleWithFixedDelay(this.getEventFetcher(),
-                this.getEventFetcher().getSleepTimeInMillisec(), this.getEventFetcher().getSleepTimeInMillisec(), TimeUnit.MICROSECONDS);
+                this.getEventFetcher().getSleepTimeInMillisec(), this.getEventFetcher().getSleepTimeInMillisec(), TimeUnit.MILLISECONDS);
 	}
 	
 	@Override
@@ -193,9 +193,12 @@ public class EventDistributorServiceImpl implements EventDistributorService
 			throw new RuntimeException(e);
 		}
 
-		inputClone.setCreateTime(ZonedDateTime.now());
+		//Not using ZonedDateTime.now() to keep precision at millisec and for easier testing 
+		long currentTimeMillis = System.currentTimeMillis();
+		ZonedDateTime currentZonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentTimeMillis), ZoneId.systemDefault());
+		inputClone.setCreateTime(currentZonedDateTime);
 		
-		//Fetch first 100 non-abort records with duplicationcheck end tike in the future and matching business record id/type/subtype/version
+		//Fetch first 100 non-abort records with duplicationcheck end date in the future and matching business record id/type/subtype/version
 		//duplicates can be from different sources
 		List<Event> events = this.getEventDistributorMapper().getEventsForDuplicateCheck(inputClone, 1, 100);
 		
@@ -223,17 +226,17 @@ public class EventDistributorServiceImpl implements EventDistributorService
 			//not duplicate case
 			event.setStatus(EventStatus.NEW);
 
-			Instant duplicateCheckEndTimeInstant = Instant.ofEpochMilli(System.currentTimeMillis() + this.getDuplicateCheckExpiryMillisec());
+			Instant duplicateCheckEndTimeInstant = Instant.ofEpochMilli(currentTimeMillis + this.getDuplicateCheckExpiryMillisec());
 			ZonedDateTime duplicateCheckEndTimeZonedDateTime = ZonedDateTime.ofInstant(duplicateCheckEndTimeInstant, ZoneId.systemDefault());
 			event.setDuplicateCheckEndTime(duplicateCheckEndTimeZonedDateTime);
 			
 			//For a given source system, there can be a cooling time to wait for the record to be processed as the system may send duplicate events
 			Integer newStatusCoolingTimeMillisec = this.getSource2NewEventCoolingTimeMillisec().get(event.getSource());
 			newStatusCoolingTimeMillisec = newStatusCoolingTimeMillisec == null ? 0 : newStatusCoolingTimeMillisec;
-			event.setStatusExpiryTime(ZonedDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis() + newStatusCoolingTimeMillisec), ZoneId.systemDefault()));
+			event.setStatusExpiryTime(ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentTimeMillis + newStatusCoolingTimeMillisec), ZoneId.systemDefault()));
 		}
-		event.setCreateTime(ZonedDateTime.now());
-		event.setUpdateTime(ZonedDateTime.now());
+		event.setCreateTime(currentZonedDateTime);
+		event.setUpdateTime(currentZonedDateTime);
 
 		event.setEventId(this.getEventDistributorMapper().getEventId());
 		this.getEventDistributorMapper().insertEvent(event);

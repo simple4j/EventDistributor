@@ -7,8 +7,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -19,6 +17,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.simple4j.eventdistributor.Main;
 import org.simple4j.eventdistributor.beans.Event;
 import org.simple4j.eventdistributor.beans.EventStatus;
 import org.simple4j.eventdistributor.beans.PublishAttempt;
@@ -160,6 +159,9 @@ public class EventFetcher implements Runnable
 	@Override
 	public void run()
 	{
+		if(Main.pauseEventFetcher)
+			return;
+
 		Instant statusExpiryTimeInstant = Instant.ofEpochMilli(System.currentTimeMillis() + this.getLockExpiryMillisec());
 		ZonedDateTime statusExpiryTimeZonedDateTime = ZonedDateTime.ofInstant(statusExpiryTimeInstant, ZoneId.systemDefault());
 		

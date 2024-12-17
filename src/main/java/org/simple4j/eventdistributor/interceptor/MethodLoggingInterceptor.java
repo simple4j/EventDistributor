@@ -65,7 +65,7 @@ public class MethodLoggingInterceptor implements MethodInterceptor {
     public Object invoke(final MethodInvocation methodInvocation) throws Throwable {
         LOGGER.debug("Entering MethodLoggingInterceptor.invoke");
         if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("parameter methodInvocation=" + methodInvocation);
+            LOGGER.trace("parameter methodInvocation={}", methodInvocation);
         }
         Class declaringClass = methodInvocation.getMethod().getDeclaringClass();
         Logger logger = this.clsLoggers.get(declaringClass);
@@ -96,22 +96,22 @@ public class MethodLoggingInterceptor implements MethodInterceptor {
                 indentor.add(1);
             }
             indentString = indentor.getIndentString();
-            logger.info(indentString + "Entering " + targetMethodSignature);
+            logger.info("{}Entering {} on {}", indentString, targetMethodSignature, methodInvocation.getThis());
             if (parameterLogger.isDebugEnabled()) {
-                parameterLogger.debug(indentString + "parameters are:" + Arrays.asList(methodInvocation.getArguments()));
+                parameterLogger.debug("{}parameters are:{}", indentString, Arrays.asList(methodInvocation.getArguments()));
             }
             long startTimeMilliSec = System.currentTimeMillis();
             Object retVal = methodInvocation.proceed();
             long endTimeMilliSec = System.currentTimeMillis();
-            logger.info(indentString + "Exiting " + targetMethodSignature + ":" + (endTimeMilliSec - startTimeMilliSec));
+            logger.info("{}Exiting {}:{}", indentString, targetMethodSignature, (endTimeMilliSec - startTimeMilliSec));
             if (returnValueLogger.isDebugEnabled()) {
-                returnValueLogger.debug(indentString + "return value=" + retVal);
+                returnValueLogger.debug("{}return value={}", indentString, retVal);
             }
             return retVal;
         } catch (Throwable e) {
-            logger.warn(indentString + "Error while calling " + targetMethodSignature);
+            logger.warn("{}Error while calling {}", indentString, targetMethodSignature);
             if (this.isPrintStacktrace()) {
-                logger.warn(indentString + "", e);
+                logger.warn(indentString, e);
             }
             throw e;
         } finally {
