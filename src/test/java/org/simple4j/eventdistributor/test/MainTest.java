@@ -37,8 +37,9 @@ public class MainTest
 	public static void setUpBeforeClass() throws Exception
 	{
 		wm1 = new WireMockServer(WireMockConfiguration.options().bindAddress("localhost").port(2001).withRootDirectory(MainTest.class.getResource("/wiremock1").getPath()));
+		wm1.start();
 		wm2 = new WireMockServer(WireMockConfiguration.options().bindAddress("localhost").port(2002).withRootDirectory(MainTest.class.getResource("/wiremock2").getPath()));
-		
+		wm2.start();
 		Main.main(new String[]{"true"});
 		exposePOJOAsHTTPService();
 	}
@@ -79,6 +80,7 @@ public class MainTest
 	public void test()
 	{
 		TestSuite ts = new TestSuite();
+		ts.setTestApplicationContext(Main.getContext());
 		boolean success = ts.execute();
 		List<String> tcPaths = new ArrayList<String>();
 		if(ts.getFailedTestCases() != null)
@@ -86,7 +88,7 @@ public class MainTest
 			for (Iterator<TestCase> iterator = ts.getFailedTestCases().iterator(); iterator.hasNext();)
 			{
 				TestCase tc = (TestCase) iterator.next();
-				tcPaths.add(tc.name);
+				tcPaths.add(tc.getName());
 			}
 		}
 		Assert.assertTrue("Failed testcases are :" + tcPaths, success);

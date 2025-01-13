@@ -10,17 +10,19 @@
                         http://www.springframework.org/schema/util
 						http://www.springframework.org/schema/util/spring-util-3.1.xsd">
 
-	<bean id="system2Caller" factory-bean="callerFactory1" factory-method="getCaller"></bean>
+	<bean id="system2Caller2" factory-bean="callerFactory2" factory-method="getCaller"></bean>
 	
 	<bean id="callerFactory2" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
 		<property name="httpWSClient" ref="httpWSClient2" />
 		<property name="jSONConfigFile" value="classpath:wstarget/system2.json" />
 		<property name="responseBodyParsers">
 			<map>
+		<!--
 				<entry key="(200)|(404)|(403)">
 					<bean id="jsonBodyParser" class="org.simple4j.wsclient.parser.impl.JSONParser">
 					</bean>
 				</entry>
+			-->
 			</map>
 		</property>
 	</bean>

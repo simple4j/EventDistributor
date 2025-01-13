@@ -6,6 +6,9 @@
     },
     "response": {
         "status": 200,
-        "statusMessage": "Everything was just fine!"
+        "statusMessage": "Everything was just fine!",
+	    "headers": {
+	        "Content-Type": "text/plain"
+	    }
     }
 }

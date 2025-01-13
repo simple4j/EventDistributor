@@ -1,6 +1,8 @@
 package org.simple4j.eventdistributor.tasks;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -36,6 +38,7 @@ public class WSCallerExecutor implements Callable<Boolean>, Comparable<WSCallerE
 
 	public WSCallerExecutor(Caller caller, Event event, PublishAttempt publishAttempt, EventDistributorMapper eventDistributorMapper, String successResponseMatchRegexPattern)
 	{
+		LOGGER.info("Instantiating {} for publish attempt{}", this, publishAttempt);
     	OBJECT_MAPPER.registerModule(new JavaTimeModule());
 		this.caller = caller;
 		this.event = event;
@@ -47,6 +50,7 @@ public class WSCallerExecutor implements Callable<Boolean>, Comparable<WSCallerE
 	@Override
 	public Boolean call()
 	{
+		LOGGER.info("Inside run of {} for publish attempt{}", this, this. publishAttempt);
 		Boolean ret = null;
 		try
 		{
@@ -55,6 +59,7 @@ public class WSCallerExecutor implements Callable<Boolean>, Comparable<WSCallerE
 				return ret;
 			Map<String, Object> response = this.caller.call(this.event);
 			String responseStr = OBJECT_MAPPER.writeValueAsString(response);
+			LOGGER.info("Calling caller {} for publish attempt{}", this.caller.getHttpWSClient().getServicePortNumber(), this. publishAttempt);
 			this.publishAttempt.setResponseHttpCode((String) response.get(this.caller.getHttpStatusCodeFieldName()));
 			this.publishAttempt.setResponseBody(responseStr);
 
@@ -72,10 +77,14 @@ public class WSCallerExecutor implements Callable<Boolean>, Comparable<WSCallerE
 		{
 			LOGGER.warn("Error while publish attempt {}", this.publishAttempt, t);
 			this.publishAttempt.setErrorDetails(t.toString());
+			this.publishAttempt.setPublishAttemptStatus(PublishAttemptStatus.FAILURE);
+			ret = false;
 		}
 		finally
 		{
-			this.publishAttempt.setUpdateTime(ZonedDateTime.now());
+			Instant instant = Instant.ofEpochMilli(System.currentTimeMillis());
+			ZonedDateTime currentTime = ZonedDateTime.ofInstant(instant, ZoneId.systemDefault());
+			this.publishAttempt.setUpdateTime(currentTime);
 		}
 		
 		try
@@ -85,6 +94,7 @@ public class WSCallerExecutor implements Callable<Boolean>, Comparable<WSCallerE
 		catch(Throwable t)
 		{
 			LOGGER.error("Error while updating publish attempt {}", this.publishAttempt, t);
+			ret = false;
 		}
 		return ret;
 	}

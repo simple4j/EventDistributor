@@ -89,7 +89,7 @@
 		<property name="eventFetcher" ref="eventFetcher"/>
 		<property name="source2NewEventCoolingTimeMillisec">
 			<map>
-				<entry key="ZZ" value="60000" />
+				<entry key="ZZ" value="30000" />
 			</map>
 		</property>
 	</bean>
@@ -123,8 +123,8 @@
 		<property name="eventDistributorMapper" ref="eventDistributorMapper" />
 		<property name="targetId2Caller">
 			<map>
-				<entry key="system1" value-ref="system1Caller"></entry>
-				<entry key="system2" value-ref="system2Caller"></entry>
+				<entry key="system1" value-ref="system1Caller1"></entry>
+				<entry key="system2" value-ref="system2Caller2"></entry>
 			</map>
 		</property>
 		<property name="targetId2SuccessResponseMatchRegexPattern">

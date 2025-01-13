@@ -21,7 +21,10 @@
 		<property name="connectionTestQuery" value="select 1 from dual"></property>
 		<property name="connectionTimeout" value="10000"></property>
 		<property name="idleTimeout" value="900000"></property>
+		<!--
 		<property name="jdbcUrl" value="jdbc:oracle:thin:@(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.us-ashburn-1.oraclecloud.com))(connect_data=(service_name=g610bfb2926ce22_development_high.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))"></property>
+		-->
+		<property name="jdbcUrl" value="jdbc:oracle:thin:@(description= (retry_count=5)(retry_delay=3)(address=(protocol=tcp)(port=1521)(host=localhost))(connect_data=(service_name=XEPDB1)))"></property>
 		<property name="leakDetectionThreshold" value="10000"></property>
 		<property name="maximumPoolSize" value="15"></property>
 		<property name="maxLifetime" value="2900000"></property>

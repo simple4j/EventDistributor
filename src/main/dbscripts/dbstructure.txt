@@ -84,7 +84,7 @@ TARGET_ID
 RESPONSE_HTTP_CODE
 RESPONSE_BODY
 ERROR_DETAILS
-CREATE_TINME
+CREATE_TIME
 UPDATE_TIME
 CREATED_BY //used if any ;ublish attempt manually sent from any admin page.
 
@@ -98,7 +98,7 @@ RESPONSE_HTTP_CODE varchar2(8),
 RESPONSE_BODY CLOB,
 ERROR_DETAILS CLOB,
 STATUS varchar2(16) not null,
-CREATE_TINME timestamp with local time zone not null,
+CREATE_TIME timestamp with local time zone not null,
 UPDATE_TIME timestamp with local time zone not null,
 CREATED_BY varchar2(64),
 CONSTRAINT PUBLISH_ATTEMPT_PK primary key (PUBLISH_ID),

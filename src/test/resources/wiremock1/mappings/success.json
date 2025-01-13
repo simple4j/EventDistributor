@@ -6,6 +6,9 @@
     },
     "response": {
         "status": 200,
-        "body": "SUCCESS"
+        "body": "{\"STATUS\":\"SUCCESS\"}",
+	    "headers": {
+	        "Content-Type": "text/plain"
+	    }
     }
 }

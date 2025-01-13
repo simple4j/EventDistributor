@@ -200,7 +200,7 @@
     </select>
 
 	<insert id="insertPublishAttempt" parameterType="PublishAttempt">
-        	INSERT INTO PUBLISH_ATTEMPT (PUBLISH_ID, EVENT_ID, TARGET_ID, RESPONSE_HTTP_CODE, RESPONSE_BODY, ERROR_DETAILS, STATUS, CREATE_TINME, UPDATE_TIME, CREATED_BY) 
+        	INSERT INTO PUBLISH_ATTEMPT (PUBLISH_ID, EVENT_ID, TARGET_ID, RESPONSE_HTTP_CODE, RESPONSE_BODY, ERROR_DETAILS, STATUS, CREATE_TIME, UPDATE_TIME, CREATED_BY) 
         	VALUES (#{publishAttempt.publishId},#{publishAttempt.eventId},#{publishAttempt.targetId},#{publishAttempt.responseHttpCode},#{publishAttempt.responseBody},#{publishAttempt.errorDetails},#{publishAttempt.publishAttemptStatus},#{publishAttempt.createTime},#{publishAttempt.updateTime},#{publishAttempt.createBy})
     </insert>
 
@@ -211,7 +211,7 @@
 		]]>
     </select>
 
-	<select id="getEvent" parameterType="java.lang.Integer" resultMap="eventResult">
+	<select id="getEvent" parameterType="java.lang.Long" resultMap="eventResult">
 		<![CDATA[
 			SELECT
 				b.EVENT_ID,
@@ -253,7 +253,7 @@
 				b.RESPONSE_BODY,
 				b.ERROR_DETAILS,
 				b.STATUS,
-				b.CREATE_TINME,
+				b.CREATE_TIME,
 				b.UPDATE_TIME,
 				b.CREATED_BY
 			FROM PUBLISH_ATTEMPT b
@@ -271,7 +271,7 @@
 				b.RESPONSE_BODY,
 				b.ERROR_DETAILS,
 				b.STATUS,
-				b.CREATE_TINME,
+				b.CREATE_TIME,
 				b.UPDATE_TIME,
 				b.CREATED_BY
 			FROM PUBLISH_ATTEMPT b
@@ -320,6 +320,7 @@
 			FROM EVENT b
 			WHERE b.PROCESSING_HOST = #{hostname}
 			  AND b.STATUS = 'IN_PROGRESS'
+			ORDER BY b.UPDATE_TIME, b.CREATE_TIME, b.EVENT_ID
 		]]>
     </select>
 
@@ -329,9 +330,9 @@
             SET RESPONSE_HTTP_CODE =#{publishAttempt.responseHttpCode},
                 RESPONSE_BODY = #{publishAttempt.responseBody},
                 ERROR_DETAILS = #{publishAttempt.errorDetails},
-                STATUS = #{publishAttemptStatus},
+                STATUS = #{publishAttempt.publishAttemptStatus},
                 UPDATE_TIME = #{publishAttempt.updateTime}
-            WHERE PUBLISH_ATTEMPT_ID = #{publishAttempt.publishAttemptId}
+            WHERE PUBLISH_ID = #{publishAttempt.publishId}
 		]]>
     </update>
 

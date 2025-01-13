@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -134,7 +135,7 @@ public class EventFetcher implements Runnable
 			distributionExecutor = new ThreadPoolExecutor(this.distributionExecutorCoreThreadPoolSize, 
 					this.distributionExecutorMaxThreadPoolSize, 
 					this.distributionExecutorKeepaliveSeconds, 
-					TimeUnit.SECONDS, new PriorityBlockingQueue<Runnable>(this.distributionExecutorQueueSize), 
+					TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(this.distributionExecutorQueueSize), 
 					new ThreadPoolExecutor.CallerRunsPolicy());
 		return distributionExecutor;
 	}
@@ -160,12 +161,15 @@ public class EventFetcher implements Runnable
 	public void run()
 	{
 		if(Main.pauseEventFetcher)
+		{
+			LOGGER.info("pauseEventFetcher is true");
 			return;
+		}
 
-		Instant statusExpiryTimeInstant = Instant.ofEpochMilli(System.currentTimeMillis() + this.getLockExpiryMillisec());
-		ZonedDateTime statusExpiryTimeZonedDateTime = ZonedDateTime.ofInstant(statusExpiryTimeInstant, ZoneId.systemDefault());
+		long currentLockExpiryMillisec = System.currentTimeMillis() + this.getLockExpiryMillisec();
+		ZonedDateTime statusExpiryTimeZonedDateTime = getZonedDateTime(currentLockExpiryMillisec);
 		
-		ZonedDateTime currentTime = ZonedDateTime.now();
+		ZonedDateTime currentTime = getZonedDateTime(System.currentTimeMillis());
 		//update NEW to INPROGRESS with status expiry
 		//update any INPROGRESS with status expired to current host and new status expiry
 		this.getEventDistributorMapper().lockEvents(this.getHostName(), this.getMaxFetchRecordCountPerBatch(), statusExpiryTimeZonedDateTime, currentTime);
@@ -174,6 +178,7 @@ public class EventFetcher implements Runnable
 		for (Event event : events)
 		{
 
+			LOGGER.debug("processing event {}", event);
 			Map<String, PublishAttempt> targetId2PublishAttempt = new HashMap<String, PublishAttempt>();
 			
 			//Below loop is to process any stuck publish events
@@ -190,27 +195,32 @@ public class EventFetcher implements Runnable
 			List<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
 			for (String targetId : targetIds)
 			{
+				LOGGER.debug("processing targetId {}", targetId);
 				Event eventFromDB = this.getEventDistributorMapper().getEvent(event.getEventId());
 				if(eventFromDB.getStatus().equals(EventStatus.ABORT))
 					break;
 				PublishAttempt publishAttempt = targetId2PublishAttempt.get(targetId);
 				if(publishAttempt == null)
 				{
+					currentTime = getZonedDateTime(System.currentTimeMillis());
+
 					//Publish attempt record does not exists, create a new attempt
 					publishAttempt = new PublishAttempt();
 					publishAttempt.setPublishId(this.getEventDistributorMapper().getPublishAttemptId());
 					publishAttempt.setCreateBy(event.getCreateBy());
-					publishAttempt.setCreateTime(event.getCreateTime());
+					publishAttempt.setCreateTime(currentTime);
 					publishAttempt.setEventId(event.getEventId());
 					publishAttempt.setPublishId(this.getEventDistributorMapper().getPublishAttemptId());
 					publishAttempt.setPublishAttemptStatus(PublishAttemptStatus.NEW);
 					publishAttempt.setTargetId(targetId);
-					publishAttempt.setUpdateTime(event.getUpdateTime());
+					publishAttempt.setUpdateTime(currentTime);
 					this.getEventDistributorMapper().insertPublishAttempt(publishAttempt);
+					LOGGER.debug("inserted new record for targetId {}", targetId);
 				}
 				
 				Caller caller = this.getTargetId2Caller().get(targetId);
 				String successResponseMatchRegexPattern = this.getTargetId2SuccessResponseMatchRegexPattern().get(targetId);
+				LOGGER.debug("submitted for processing for targetId {}", publishAttempt);
                 Future<Boolean> future = this.getDistributionExecutor().submit(new WSCallerExecutor(caller, event,
                 		publishAttempt, this.getEventDistributorMapper(), successResponseMatchRegexPattern));
                 futures.add(future);
@@ -223,6 +233,7 @@ public class EventFetcher implements Runnable
 				try
 				{
 					Boolean publishAttemptSuccess = future.get();
+					//below condition is possible when the event is aborted after submitting to the executor
 					if(publishAttemptSuccess == null)
 						break;
 					eventSuccess = eventSuccess && publishAttemptSuccess;
@@ -239,20 +250,27 @@ public class EventFetcher implements Runnable
 					LOGGER.warn("", e);
 				}
 			}
-			Event eventFromDB = this.eventDistributorMapper.getEvent(event.getEventId());
+			Event eventFromDB = this.getEventDistributorMapper().getEvent(event.getEventId());
 			if(!eventFromDB.getStatus().equals(EventStatus.ABORT))
 			{
 				if(eventSuccess)
 					eventFromDB.setStatus(EventStatus.SUCCESS);
 				else
 					eventFromDB.setStatus(EventStatus.FAILURE);
-				currentTime = ZonedDateTime.now();
+				currentTime = getZonedDateTime(System.currentTimeMillis());
 				eventFromDB.setUpdateTime(currentTime);
-				this.eventDistributorMapper.updateEvent(eventFromDB);
+				this.getEventDistributorMapper().updateEvent(eventFromDB);
 			}
 			
 		}
 
+	}
+
+	private ZonedDateTime getZonedDateTime(long millisec)
+	{
+		Instant instant = Instant.ofEpochMilli(millisec);
+		ZonedDateTime ret = ZonedDateTime.ofInstant(instant, ZoneId.systemDefault());
+		return ret;
 	}
 
 	public long getSleepTimeInMillisec()

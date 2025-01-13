@@ -10,7 +10,7 @@
                         http://www.springframework.org/schema/util
 						http://www.springframework.org/schema/util/spring-util-3.1.xsd">
 
-	<bean id="system1Caller" factory-bean="callerFactory1" factory-method="getCaller"></bean>
+	<bean id="system1Caller1" factory-bean="callerFactory1" factory-method="getCaller"></bean>
 	
 	<bean id="callerFactory1" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
 		<property name="httpWSClient" ref="httpWSClient1" />
