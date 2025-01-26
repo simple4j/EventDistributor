@@ -10,7 +10,7 @@
                         http://www.springframework.org/schema/util
 						http://www.springframework.org/schema/util/spring-util-3.1.xsd">
 
-	<bean id="getCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
+	<bean id="getEventsCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
 		<property name="httpWSClient" ref="httpWSClient"></property>
 		<property name="jSONConfig">
 			<value>
@@ -20,19 +20,17 @@
 	"freemarkerVersion":"2.3.23",
     "request": {
         "method": "GET",
-        "urlPattern": "/user/${userPK}",
+        "urlPattern": "/eventdistributorws/eppublic/V1/events.json?eventId=${eventId}&businessRecordId=${businessRecordId}&businessRecordType=${businessRecordType}&businessRecordSubType=${businessRecordSubType}&businessRecordVersion=${businessRecordVersion}&source=${source}&status=${status}&processingHost=${processingHost}&createBy=${createBy}&startPosition=${startPosition}&numberOfRecords=${numberOfRecords}",
         "body": "",
         "staticHeaders": {
             "Content-Type": "application/JSON"
         },
         "headers": {
-            "x-header1": "${testProperty1}",
-            "x-header2": "${testProperty2}"
+			"callerId": "${callerId}"
         }
     },
     "response": {
         "responseBodyToCustomFieldMapping": {
-            "responsevalue1": "responsevalue"
         }
     }
 }
@@ -41,21 +39,42 @@
 		</property>
 		<property name="responseBodyParsers">
 			<map>
-				<entry key="(200)|(204)" value-ref="successBodyParser"></entry>
-				<entry key="(404)|(403)" value-ref="failureBodyParser"></entry>
+				<entry key="(200)|(204)|(412)" value-ref="jsonBodyParser"></entry>
 			</map>
 		</property>
 	</bean>
 
-	<!-- {} -->
-	<bean id="successBodyParser" class="org.simple4j.wsclient.parser.impl.JSONParser">
-	</bean>
-
-	<bean id="failureBodyParser" class="org.simple4j.wsclient.parser.impl.XMLParser">
-		<property name="listElementXpaths">
-			<list>
-				<value>errorReasonCode</value>
-			</list>
+	<bean id="getEventCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
+		<property name="httpWSClient" ref="httpWSClient"></property>
+		<property name="jSONConfig">
+			<value>
+				<![CDATA[
+{
+	"freemarkerEncoding":"UTF-8",
+	"freemarkerVersion":"2.3.23",
+    "request": {
+        "method": "GET",
+        "urlPattern": "/eventdistributorws/eppublic/V1/event.json?eventId=${eventId}",
+        "body": "",
+        "staticHeaders": {
+            "Content-Type": "application/JSON"
+        },
+        "headers": {
+			"callerId": "${callerId}"
+        }
+    },
+    "response": {
+        "responseBodyToCustomFieldMapping": {
+        }
+    }
+}
+				]]>
+			</value>
+		</property>
+		<property name="responseBodyParsers">
+			<map>
+				<entry key="(200)|(204)|(412)" value-ref="jsonBodyParser"></entry>
+			</map>
 		</property>
 	</bean>
 

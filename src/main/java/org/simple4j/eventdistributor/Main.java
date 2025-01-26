@@ -3,6 +3,7 @@ package org.simple4j.eventdistributor;
 import java.lang.invoke.MethodHandles;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -252,19 +253,27 @@ public class Main
             String callerId = ctx.header("callerId");
 
             Event event = new Event();
-            String eventId = ctx.queryParam("eventId");
-            event.setBusinessRecordId(ctx.queryParam("businessRecordId"));
-            event.setBusinessRecordType(ctx.queryParam("businessRecordType"));
-            event.setBusinessRecordSubType(ctx.queryParam("businessRecordSubType"));
-            event.setBusinessRecordVersion(ctx.queryParam("businessRecordVersion"));
-            event.setSource(ctx.queryParam("source"));
-            event.setStatus(EventStatus.valueOf(ctx.queryParam("status")));
-            event.setProcessingHost(ctx.queryParam("processingHost"));
-            event.setCreateBy(ctx.queryParam("createBy"));
-            String startPosition = ctx.queryParam("startPosition");
-            String numberOfRecords = ctx.queryParam("numberOfRecords");
+            String eventIdStr = getStringWithEmptyCheck(ctx.queryParam("eventId"), null);
+    		if (eventIdStr != null)
+    		{
+    			long eventId = Long.parseLong(eventIdStr);
+    			event.setEventId(eventId);
+    		}
+
+            event.setBusinessRecordId(getStringWithEmptyCheck(ctx.queryParam("businessRecordId"), null));
+            event.setBusinessRecordType(getStringWithEmptyCheck(ctx.queryParam("businessRecordType"), null));
+            event.setBusinessRecordSubType(getStringWithEmptyCheck(ctx.queryParam("businessRecordSubType"), null));
+            event.setBusinessRecordVersion(getStringWithEmptyCheck(ctx.queryParam("businessRecordVersion"), null));
+            event.setSource(getStringWithEmptyCheck(ctx.queryParam("source"), null));
+            String statusStr = getStringWithEmptyCheck(ctx.queryParam("status"), null);
+            if(statusStr != null)
+				event.setStatus(EventStatus.valueOf(statusStr));
+            event.setProcessingHost(getStringWithEmptyCheck(ctx.queryParam("processingHost"), null));
+            event.setCreateBy(getStringWithEmptyCheck(ctx.queryParam("createBy"), null));
+            String startPosition = getStringWithEmptyCheck(ctx.queryParam("startPosition"), null);
+            String numberOfRecords = getStringWithEmptyCheck(ctx.queryParam("numberOfRecords"), null);
             
-            ret = main.getEventDistributorService().getEvents(callerId, startPosition, numberOfRecords, eventId, event);
+            ret = main.getEventDistributorService().getEvents(callerId, startPosition, numberOfRecords, event);
             
             LOGGER.info("ret:{}", ret);
 
@@ -276,7 +285,10 @@ public class Main
                 	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
                     return;
                 }
-                ctx.result(OBJECT_MAPPER.writeValueAsString(ret.responseObject));
+            
+            HashMap<String, List<Event>> retMap = new HashMap<String, List<Event>>();
+            retMap.put("events", ret.responseObject);
+            ctx.result(OBJECT_MAPPER.writeValueAsString(retMap));
         });
 
         javalin.post(main.getUrlBase()+"/repost/event.json", ctx -> 
@@ -287,14 +299,8 @@ public class Main
             String eventId = ctx.queryParam("eventId");
             
     		String createBy = null;
-        	if(callerId != null && callerId.trim().length() > 0)
-        	{
-        		createBy = callerId;
-        	}
-        	if(userId != null && userId.trim().length() > 0)
-        	{
-        		createBy = userId;
-        	}
+        	createBy = getStringWithEmptyCheck(callerId, null);
+        	createBy = getStringWithEmptyCheck(userId, createBy);
 
         	ret = main.getEventDistributorService().repostEvent(eventId, createBy);
 
@@ -318,14 +324,8 @@ public class Main
             String publishId = ctx.queryParam("publishId");
             
     		String createBy = null;
-        	if(callerId != null && callerId.trim().length() > 0)
-        	{
-        		createBy = callerId;
-        	}
-        	if(userId != null && userId.trim().length() > 0)
-        	{
-        		createBy = userId;
-        	}
+        	createBy = getStringWithEmptyCheck(callerId, null);
+        	createBy = getStringWithEmptyCheck(userId, createBy);
             
             ret = main.getEventDistributorService().republish(publishId, createBy);
 
@@ -349,14 +349,8 @@ public class Main
             String eventId = ctx.queryParam("eventId");
             
     		String updateBy = null;
-        	if(callerId != null && callerId.trim().length() > 0)
-        	{
-        		updateBy = callerId;
-        	}
-        	if(userId != null && userId.trim().length() > 0)
-        	{
-        		updateBy = userId;
-        	}
+        	updateBy = getStringWithEmptyCheck(callerId, null);
+        	updateBy = getStringWithEmptyCheck(userId, updateBy);
 
         	ret = main.getEventDistributorService().abortEvent(eventId, updateBy);
 
@@ -390,6 +384,16 @@ public class Main
         });
     	LOGGER.info("End of main method");
     }
+
+	private static String getStringWithEmptyCheck(String in, String defaultValue)
+	{
+		String ret = defaultValue;
+		if(in != null && in.trim().length() > 0)
+		{
+			ret = in;
+		}
+		return ret;
+	}
 
     private void init()
     {

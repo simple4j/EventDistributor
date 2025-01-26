@@ -1,0 +1,15 @@
+{
+    "request": {
+        "method": "GET",
+        "urlPattern": "/system2/refresh/slow/entry.json.*"
+/*        "url": "/system2/refresh/entry.json?k=1&t=AA" */
+    },
+    "response": {
+        "status": 200		,
+        "fixedDelayMilliseconds": 4000,
+        "statusMessage": "Everything was just fine!",
+	    "headers": {
+	        "Content-Type": "text/plain"
+	    }
+    }
+}

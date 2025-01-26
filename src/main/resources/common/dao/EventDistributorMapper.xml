@@ -261,7 +261,7 @@
 		]]>
     </select>
 
-	<select id="getPublishAttempt" parameterType="java.lang.Integer" resultMap="publishAttemptResult">
+	<select id="getPublishAttempt" parameterType="java.lang.Long" resultMap="publishAttemptResult">
 		<![CDATA[
 			SELECT
 				b.PUBLISH_ID,

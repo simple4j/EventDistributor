@@ -34,7 +34,7 @@
 		<property name="serviceHostName" value="localhost"></property>
 		<property name="servicePortNumber" value="2002"></property>
 		<property name="serviceProtocol" value="http"></property>
-		<property name="socketTimeOutMillis" value="3000"></property>
+		<property name="socketTimeOutMillis" value="2000"></property>
 	</bean>
 	
 

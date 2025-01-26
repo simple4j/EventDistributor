@@ -21,6 +21,7 @@ import org.simple4j.eventdistributor.beans.Event;
 import org.simple4j.eventdistributor.beans.EventStatus;
 import org.simple4j.eventdistributor.beans.HealthCheck;
 import org.simple4j.eventdistributor.beans.PublishAttempt;
+import org.simple4j.eventdistributor.beans.PublishAttemptStatus;
 import org.simple4j.eventdistributor.beans.HealthCheck.Status;
 import org.simple4j.eventdistributor.dao.EventDistributorMapper;
 import org.simple4j.eventdistributor.japi.EventDistributorService;
@@ -183,29 +184,39 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	@Override
 	public AppResponse<Long> postEvent(Event event)
 	{
-
-		Event inputClone = new Event();
-		try
-		{
-			BeanUtils.copyProperties(inputClone, event);
-		} catch (IllegalAccessException | InvocationTargetException e)
-		{
-			throw new RuntimeException(e);
-		}
+		return this.postEvent(event, true);
+	}
+	
+	private AppResponse<Long> postEvent(Event event, boolean enableDuplicateCheck)
+	{
 
 		//Not using ZonedDateTime.now() to keep precision at millisec and for easier testing 
 		long currentTimeMillis = System.currentTimeMillis();
 		ZonedDateTime currentZonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentTimeMillis), ZoneId.systemDefault());
-		inputClone.setCreateTime(currentZonedDateTime);
+
+		List<Event> duplicateEvents = null;
 		
-		//Fetch first 100 non-abort records with duplicationcheck end date in the future and matching business record id/type/subtype/version
-		//duplicates can be from different sources
-		List<Event> events = this.getEventDistributorMapper().getEventsForDuplicateCheck(inputClone, 1, 100);
-		
-		if(events != null && events.size() > 0)
+		if(enableDuplicateCheck)
+		{
+			Event inputClone = new Event();
+			try
+			{
+				BeanUtils.copyProperties(inputClone, event);
+			} catch (IllegalAccessException | InvocationTargetException e)
+			{
+				throw new RuntimeException(e);
+			}
+	
+			inputClone.setCreateTime(currentZonedDateTime);
+			
+			//Fetch first 100 non-abort records with duplicationcheck end date in the future and matching business record id/type/subtype/version
+			//duplicates can be from different sources
+			duplicateEvents = this.getEventDistributorMapper().getEventsForDuplicateCheck(inputClone, 1, 100);
+		}
+		if(duplicateEvents != null && duplicateEvents.size() > 0)
 		{
 			//mark the incoming event as duplicate with the same duplicate check end time as original event and duplicate event id of the first event
-			for (Event eventFromDB : events)
+			for (Event eventFromDB : duplicateEvents)
 			{
 				event.setDuplicateCheckEndTime(eventFromDB.getDuplicateCheckEndTime());
 				event.setStatus(EventStatus.DUPLICATE);
@@ -294,10 +305,8 @@ public class EventDistributorServiceImpl implements EventDistributorService
 
 	@Override
 	public AppResponse<List<Event>> getEvents(String callerId, String startPositionStr, String numberOfRecordsStr,
-			String eventIdStr, Event event)
+			Event event)
 	{
-		long eventId = Long.parseLong(eventIdStr);
-		event.setEventId(eventId);
 		int startPosition = Integer.parseInt(startPositionStr);
 		int numberOfRecords = Integer.parseInt(numberOfRecordsStr);
 		
@@ -315,23 +324,31 @@ public class EventDistributorServiceImpl implements EventDistributorService
         event.setEventId(null);
         event.setStatus(null);
 		event.setCreateBy(createBy);
-		return this.postEvent(event);
+		return this.postEvent(event, false);
 	}
 	
 	@Override
 	public AppResponse<Long> republish(String publishIdStr, String createBy)
 	{
 		long publishId = Long.parseLong(publishIdStr);
+
+		//Not using ZonedDateTime.now() to keep precision at millisec and for easier testing 
+		long currentTimeMillis = System.currentTimeMillis();
+		ZonedDateTime currentZonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentTimeMillis), ZoneId.systemDefault());
+
 		PublishAttempt publishAttempt = this.getEventDistributorMapper().getPublishAttempt(publishId);
         publishAttempt.setPublishId(null);
         publishAttempt.setResponseHttpCode(null);
         publishAttempt.setResponseBody(null);
         publishAttempt.setCreateBy(createBy);
+        publishAttempt.setCreateTime(currentZonedDateTime);
+        publishAttempt.setErrorDetails(null);
+        publishAttempt.setPublishAttemptStatus(PublishAttemptStatus.NEW);
+        publishAttempt.setUpdateTime(currentZonedDateTime);
         
 		Event event = this.getEventDistributorMapper().getEvent(publishAttempt.getEventId());
-		ZonedDateTime currentTime = ZonedDateTime.now();
 		AppResponse<Long> ret = new AppResponse<Long>();
-		if(event.getStatus().equals(EventStatus.IN_PROGRESS) && event.getStatusExpiryTime().isAfter(currentTime))
+		if(event.getStatus().equals(EventStatus.IN_PROGRESS) && event.getStatusExpiryTime().isAfter(currentZonedDateTime))
 		{
 			ret.errorDetails = new ErrorDetails();
 			ret.errorDetails.errorId = System.currentTimeMillis()+"@"+ this.getEventFetcher().getHostName();
@@ -345,9 +362,9 @@ public class EventDistributorServiceImpl implements EventDistributorService
 			this.getEventDistributorMapper().insertPublishAttempt(publishAttempt);
 			ret.responseObject = publishAttemptId;
 			
-			event.setUpdateTime(currentTime);
+			event.setUpdateTime(currentZonedDateTime);
 			event.setStatus(EventStatus.IN_PROGRESS);
-			event.setStatusExpiryTime(currentTime);
+			event.setStatusExpiryTime(currentZonedDateTime);
 			this.getEventDistributorMapper().updateEvent(event);
 		}
 		

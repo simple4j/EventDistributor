@@ -39,7 +39,7 @@
 				</entry>
 
 				<!-- getEvent(callerId, eventId) -->
-				<entry key="public org.simple4j.eventdistributor.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.getEvent(java.lang.String,java.lang.String)">
+				<entry key="public org.simple4j.apiaopvalidator.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.getEvent(java.lang.String,java.lang.String)">
 					<!-- list of ParameterValidator for each of the parameters -->
 					<list>
 						<ref bean="callerIdValidator"/>
@@ -48,50 +48,51 @@
 				</entry>
 
 				<!-- getEvents(callerId, startPosition, numberOfRecords, eventId, event) -->
-				<entry key="public org.simple4j.eventdistributor.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.getEvents(java.lang.String,java.lang.String,java.lang.String,java.lang.String,org.simple4j.eventdistributor.beans.Event)">
+				<entry key="public org.simple4j.apiaopvalidator.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.getEvents(java.lang.String,java.lang.String,java.lang.String,org.simple4j.eventdistributor.beans.Event)">
 					<!-- list of ParameterValidator for each of the parameters -->
 					<list>
 						<ref bean="callerIdValidator"/>
 						<ref bean="startPositionValidator"/>
 						<ref bean="numberOfRecordsValidator"/>
-						<bean parent="eventIdValidator">
+						<bean parent="nullableeventValidator">
 							<property name="argumentIndex" value="3" />
-						</bean>
-						<bean parent="eventValidator">
-							<property name="argumentIndex" value="4" />
 						</bean>
 					</list>
 				</entry>
 
 				<!-- repostEvent(eventId, createBy) -->
-				<entry key="public org.simple4j.eventdistributor.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.repostEvent(java.lang.String,java.lang.String)">
+				<entry key="public org.simple4j.apiaopvalidator.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.repostEvent(java.lang.String,java.lang.String)">
 					<!-- list of ParameterValidator for each of the parameters -->
 					<list>
-						<ref bean="createByValidator" />
-						<ref bean="eventIdValidator"/>
+						<bean parent="eventIdValidator">
+							<property name="argumentIndex" value="0" />
+						</bean>
+						<ref bean="createByValidator"/>
 					</list>
 				</entry>
 
 				<!-- republish(publishId, createBy)-->
-				<entry key="public org.simple4j.eventdistributor.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.republish(java.lang.String,java.lang.String)">
+				<entry key="public org.simple4j.apiaopvalidator.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.republish(java.lang.String,java.lang.String)">
 					<!-- list of ParameterValidator for each of the parameters -->
 					<list>
-						<ref bean="createByValidator" />
 						<bean parent="eventIdValidator">
 							<property name="fieldName" value="publishId" />
+							<property name="argumentIndex" value="0" />
 						</bean>
+						<ref bean="createByValidator"/>
 					</list>
 				</entry>
 
 				<!-- abortEvent(eventId, updateBy) -->
-				<entry key="public org.simple4j.eventdistributor.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.abortEvent(java.lang.String,java.lang.String)">
+				<entry key="public org.simple4j.apiaopvalidator.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.abortEvent(java.lang.String,java.lang.String)">
 					<!-- list of ParameterValidator for each of the parameters -->
 					<list>
-						<bean parent="createByValidator">
-							<property name="fieldName" value="updateBy" />
+						<bean parent="eventIdValidator">
 							<property name="argumentIndex" value="0" />
 						</bean>
-						<ref bean="eventIdValidator"/>
+						<bean parent="createByValidator">
+							<property name="fieldName" value="updateBy" />
+						</bean>
 					</list>
 				</entry>
 			</map>
@@ -134,6 +135,7 @@
 			</list>
 		</property>
 	</bean>
+
 <!--
 	<bean id="eventValidator" class="org.simple4j.apiaopvalidator.validation.ParameterValidator">
 		<property name="fieldName" value="event" />
@@ -163,6 +165,106 @@
 				<ref bean="createByPropertyValidator"/>
 				<ref bean="businessRecordSubTypeValidator"/>
 				<ref bean="businessRecordVersionValidator"/>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="nullableeventValidator" class="org.simple4j.apiaopvalidator.validation.MethodArgumentValidator">
+		<property name="fieldName" value="event" />
+		<property name="argumentIndex" value="0" />
+		<property name="doNullCheck" value="false" />
+		<property name="validators">
+			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+			<list>
+				<bean class="org.simple4j.apiaopvalidator.validation.BeanValidator">
+					<property name="doNullCheck" value="false" />
+					<property name="fieldName" value="eventId" />
+					<property name="propertyPath" value="eventId" />
+					<property name="validators">
+						<list>
+							<bean class="org.simple4j.apiaopvalidator.validation.MaxLengthValidator" >
+								<property name="maxLength" value="16"></property>
+							</bean>
+						</list>
+					</property>
+				</bean>
+				<bean class="org.simple4j.apiaopvalidator.validation.BeanValidator">
+					<property name="doNullCheck" value="false" />
+					<property name="fieldName" value="businessRecordId" />
+					<property name="propertyPath" value="businessRecordId" />
+					<property name="validators">
+						<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+						<list>
+							<bean class="org.simple4j.apiaopvalidator.validation.MaxLengthValidator" >
+								<property name="maxLength" value="256"></property>
+							</bean>
+						</list>
+					</property>
+				</bean>
+				<bean class="org.simple4j.apiaopvalidator.validation.BeanValidator">
+					<property name="doNullCheck" value="false" />
+					<property name="fieldName" value="businessRecordType" />
+					<property name="propertyPath" value="businessRecordType" />
+					<property name="validators">
+						<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+						<list>
+							<bean class="org.simple4j.apiaopvalidator.validation.MaxLengthValidator" >
+								<property name="maxLength" value="256"></property>
+							</bean>
+						</list>
+					</property>
+				</bean>
+				<bean class="org.simple4j.apiaopvalidator.validation.BeanValidator">
+					<property name="doNullCheck" value="false" />
+					<property name="fieldName" value="source" />
+					<property name="propertyPath" value="source" />
+					<property name="validators">
+						<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+						<list>
+							<bean class="org.simple4j.apiaopvalidator.validation.MaxLengthValidator" >
+								<property name="maxLength" value="128"></property>
+							</bean>
+						</list>
+					</property>
+				</bean>
+				<bean class="org.simple4j.apiaopvalidator.validation.BeanValidator">
+					<property name="doNullCheck" value="false" />
+					<property name="fieldName" value="createBy" />
+					<property name="propertyPath" value="createBy" />
+					<property name="validators">
+						<list>
+							<bean class="org.simple4j.apiaopvalidator.validation.MaxLengthValidator" >
+								<property name="maxLength" value="128"></property>
+							</bean>
+						</list>
+					</property>
+				</bean>
+				<ref bean="businessRecordSubTypeValidator"/>
+				<ref bean="businessRecordVersionValidator"/>
+				<bean class="org.simple4j.apiaopvalidator.validation.BeanValidator">
+					<property name="doNullCheck" value="false" />
+					<property name="fieldName" value="status" />
+					<property name="propertyPath" value="status" />
+					<property name="validators">
+						<list>
+							<bean class="org.simple4j.apiaopvalidator.validation.RegExpValidator" >
+								<property name="regExp" value="(NEW)|(DUPLICATE)|(IN_PROGRESS)|(FAILURE)|(SUCCESS)|(ABORT)"></property>
+							</bean>
+						</list>
+					</property>
+				</bean>
+				<bean class="org.simple4j.apiaopvalidator.validation.BeanValidator">
+					<property name="doNullCheck" value="false" />
+					<property name="fieldName" value="processingHost" />
+					<property name="propertyPath" value="processingHost" />
+					<property name="validators">
+						<list>
+							<bean class="org.simple4j.apiaopvalidator.validation.MaxLengthValidator" >
+								<property name="maxLength" value="128"></property>
+							</bean>
+						</list>
+					</property>
+				</bean>
 			</list>
 		</property>
 	</bean>
@@ -203,6 +305,7 @@
 		</property>
 	</bean>
 
+
 	<bean id="sourceValidator" class="org.simple4j.apiaopvalidator.validation.BeanValidator">
 		<property name="doNullCheck" value="true" />
 		<property name="fieldName" value="source" />
@@ -221,6 +324,7 @@
 		</property>
 	</bean>
 
+
 	<bean id="createByPropertyValidator" class="org.simple4j.apiaopvalidator.validation.BeanValidator">
 		<property name="doNullCheck" value="true" />
 		<property name="fieldName" value="createBy" />
@@ -234,13 +338,14 @@
 			<property name="minLength" value="1"></property>
 		</bean>
 		<bean class="org.simple4j.apiaopvalidator.validation.MaxLengthValidator" >
-			<property name="maxLength" value="124"></property>
+			<property name="maxLength" value="128"></property>
 		</bean>
 	</util:list>
 
+
 	<bean id="createByValidator" class="org.simple4j.apiaopvalidator.validation.MethodArgumentValidator">
 		<property name="fieldName" value="createBy" />
-		<property name="argumentIndex" value="0" />
+		<property name="argumentIndex" value="1" />
 		<property name="validators" ref="createByValidatorList" />
 	</bean>
 
@@ -252,7 +357,7 @@
 			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
 			<list>
 				<bean class="org.simple4j.apiaopvalidator.validation.MaxLengthValidator" >
-					<property name="maxLength" value="124"></property>
+					<property name="maxLength" value="128"></property>
 				</bean>
 			</list>
 		</property>
@@ -266,7 +371,7 @@
 			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
 			<list>
 				<bean class="org.simple4j.apiaopvalidator.validation.MaxLengthValidator" >
-					<property name="maxLength" value="124"></property>
+					<property name="maxLength" value="128"></property>
 				</bean>
 			</list>
 		</property>

@@ -15,7 +15,7 @@ public interface EventDistributorService
 	public AppResponse<Long> postEvent(Event event);
 	public AppResponse<Event> getEvent(String callerId, String eventId);
 	public AppResponse<List<Event>> getEvents(String callerId, String startPosition, String numberOfRecords,
-			String eventId, Event event);
+			Event event);
 	public AppResponse<Long> repostEvent(String eventIdStr, String createBy);
 	public AppResponse<Long> republish(String publishIdStr, String createBy);
 	public AppResponse<Long> abortEvent(String eventId, String updateBy);

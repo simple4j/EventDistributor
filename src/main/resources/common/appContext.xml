@@ -92,6 +92,7 @@
 				<entry key="ZZ" value="30000" />
 			</map>
 		</property>
+		<property name="duplicateCheckExpiryMillisec" value="60000"></property>
 	</bean>
 	
 	<util:list id="eventTargetRules">
@@ -110,6 +111,7 @@
 			<property name="targetIds">
 				<list>
 					<value>system2</value>
+					<value>system3</value>
 				</list>
 			</property>
 		</bean>
@@ -125,12 +127,14 @@
 			<map>
 				<entry key="system1" value-ref="system1Caller1"></entry>
 				<entry key="system2" value-ref="system2Caller2"></entry>
+				<entry key="system3" value-ref="system3Caller3"></entry>
 			</map>
 		</property>
 		<property name="targetId2SuccessResponseMatchRegexPattern">
 			<map>
 				<entry key="system1"  value=".*SUCCESS.*"></entry>
 				<entry key="system2"  value=".*200.*"></entry>
+				<entry key="system3"  value=".*200.*"></entry>
 			</map>
 		</property>
 	</bean>

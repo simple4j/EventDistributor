@@ -10,7 +10,7 @@
                         http://www.springframework.org/schema/util
 						http://www.springframework.org/schema/util/spring-util-3.1.xsd">
 
-	<bean id="allFieldsPostCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
+    <bean id="repostEventCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
 		<property name="httpWSClient" ref="httpWSClient"></property>
 		<property name="jSONConfig">
 			<value>
@@ -20,46 +20,13 @@
 	"freemarkerVersion":"2.3.23",
     "request": {
         "method": "POST",
-        "urlPattern": "/eventdistributorws/eppublic/V1/event.json",
-        "body": "{\"businessRecordId\" : \"${businessRecordId}\",\"businessRecordType\" : \"${businessRecordType}\",\"businessRecordSubType\" : \"${businessRecordSubType}\",\"businessRecordVersion\" : \"${businessRecordVersion}\",\"source\" : \"${source}\"}",
+        "urlPattern": "/eventdistributorws/eppublic/V1/repost/event.json?eventId=${eventId}",
+        "body": "",
         "staticHeaders": {
             "Content-Type": "application/JSON"
         },
         "headers": {
-        "callerId":"${callerId}"
-        }
-    },
-    "response": {
-        "responseBodyToCustomFieldMapping": {
-        }
-    }
-}
-				]]>
-			</value>
-		</property>
-		<property name="responseBodyParsers">
-			<map>
-				<entry key="(200)|(208)" value-ref="jsonBodyParser"></entry>
-			</map>
-		</property>
-	</bean>
-
-	<bean id="mandatoryFieldsPostCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
-		<property name="httpWSClient" ref="httpWSClient"></property>
-		<property name="jSONConfig">
-			<value>
-				<![CDATA[
-{
-	"freemarkerEncoding":"UTF-8",
-	"freemarkerVersion":"2.3.23",
-    "request": {
-        "method": "POST",
-        "urlPattern": "/eventdistributorws/eppublic/V1/event.json",
-        "body": "{\"businessRecordId\" : \"${businessRecordId}\",\"businessRecordType\" : \"${businessRecordType}\",\"source\" : \"${source}\"}",
-        "staticHeaders": {
-            "Content-Type": "application/JSON"
-        },
-        "headers": {
+        "callerId":"${callerId}",
         "userId":"${userId}"
         }
     },
@@ -73,12 +40,12 @@
 		</property>
 		<property name="responseBodyParsers">
 			<map>
-				<entry key="(200)|(208)" value-ref="jsonBodyParser"></entry>
+				<entry key="(200)|(208)|(412)" value-ref="jsonBodyParser"></entry>
 			</map>
 		</property>
 	</bean>
 
-	<bean id="noFieldsPostCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
+    <bean id="repostPublishCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
 		<property name="httpWSClient" ref="httpWSClient"></property>
 		<property name="jSONConfig">
 			<value>
@@ -88,13 +55,14 @@
 	"freemarkerVersion":"2.3.23",
     "request": {
         "method": "POST",
-        "urlPattern": "/eventdistributorws/eppublic/V1/event.json",
-        "body": "{}",
+        "urlPattern": "/eventdistributorws/eppublic/V1/repost/publish.json?publishId=${publishId}",
+        "body": "",
         "staticHeaders": {
             "Content-Type": "application/JSON"
         },
         "headers": {
-        "userId":"${userId!}"
+        "callerId":"${callerId}",
+        "userId":"${userId}"
         }
     },
     "response": {
@@ -107,7 +75,7 @@
 		</property>
 		<property name="responseBodyParsers">
 			<map>
-				<entry key="(200)|(208)" value-ref="jsonBodyParser"></entry>
+				<entry key="(200)|(208)|(412)" value-ref="jsonBodyParser"></entry>
 			</map>
 		</property>
 	</bean>

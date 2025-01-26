@@ -179,7 +179,8 @@ public class EventFetcher implements Runnable
 		{
 
 			LOGGER.debug("processing event {}", event);
-			Map<String, PublishAttempt> targetId2PublishAttempt = new HashMap<String, PublishAttempt>();
+			Map<String, PublishAttempt> targetId2NEWPublishAttempt = new HashMap<String, PublishAttempt>();
+			Map<String, PublishAttempt> targetId2SUCCESSPublishAttempt = new HashMap<String, PublishAttempt>();
 			
 			//Below loop is to process any stuck publish events
 			for (Iterator<PublishAttempt> iterator = event.getPublishAttempts().iterator(); iterator.hasNext();)
@@ -187,7 +188,11 @@ public class EventFetcher implements Runnable
 				PublishAttempt pa = iterator.next();
 				if(PublishAttemptStatus.NEW.equals(pa.getPublishAttemptStatus()))
 				{
-					targetId2PublishAttempt.put(pa.getTargetId(), pa);
+					targetId2NEWPublishAttempt.put(pa.getTargetId(), pa);
+				}
+				if(PublishAttemptStatus.SUCCESS.equals(pa.getPublishAttemptStatus()))
+				{
+					targetId2SUCCESSPublishAttempt.put(pa.getTargetId(), pa);
 				}
 			}
 			
@@ -199,31 +204,38 @@ public class EventFetcher implements Runnable
 				Event eventFromDB = this.getEventDistributorMapper().getEvent(event.getEventId());
 				if(eventFromDB.getStatus().equals(EventStatus.ABORT))
 					break;
-				PublishAttempt publishAttempt = targetId2PublishAttempt.get(targetId);
-				if(publishAttempt == null)
+				PublishAttempt successPublishAttempt = targetId2SUCCESSPublishAttempt.get(targetId);
+				PublishAttempt publishAttempt = targetId2NEWPublishAttempt.get(targetId);
+				//successPublishAttempt will be null for new events
+				//publishAttempt will not be null for republish case
+				if(successPublishAttempt == null || publishAttempt != null)
 				{
-					currentTime = getZonedDateTime(System.currentTimeMillis());
-
-					//Publish attempt record does not exists, create a new attempt
-					publishAttempt = new PublishAttempt();
-					publishAttempt.setPublishId(this.getEventDistributorMapper().getPublishAttemptId());
-					publishAttempt.setCreateBy(event.getCreateBy());
-					publishAttempt.setCreateTime(currentTime);
-					publishAttempt.setEventId(event.getEventId());
-					publishAttempt.setPublishId(this.getEventDistributorMapper().getPublishAttemptId());
-					publishAttempt.setPublishAttemptStatus(PublishAttemptStatus.NEW);
-					publishAttempt.setTargetId(targetId);
-					publishAttempt.setUpdateTime(currentTime);
-					this.getEventDistributorMapper().insertPublishAttempt(publishAttempt);
-					LOGGER.debug("inserted new record for targetId {}", targetId);
+					if(publishAttempt == null)
+					{
+						currentTime = getZonedDateTime(System.currentTimeMillis());
+	
+						//Publish attempt record does not exists, create a new attempt
+						publishAttempt = new PublishAttempt();
+						publishAttempt.setPublishId(this.getEventDistributorMapper().getPublishAttemptId());
+						publishAttempt.setCreateBy(event.getCreateBy());
+						publishAttempt.setCreateTime(currentTime);
+						publishAttempt.setEventId(event.getEventId());
+						publishAttempt.setPublishId(this.getEventDistributorMapper().getPublishAttemptId());
+						publishAttempt.setPublishAttemptStatus(PublishAttemptStatus.NEW);
+						publishAttempt.setTargetId(targetId);
+						publishAttempt.setUpdateTime(currentTime);
+						this.getEventDistributorMapper().insertPublishAttempt(publishAttempt);
+						LOGGER.debug("inserted new record for targetId {}", targetId);
+					}
+					
+					
+					Caller caller = this.getTargetId2Caller().get(targetId);
+					String successResponseMatchRegexPattern = this.getTargetId2SuccessResponseMatchRegexPattern().get(targetId);
+					LOGGER.debug("submitted for processing for targetId {}", publishAttempt);
+	                Future<Boolean> future = this.getDistributionExecutor().submit(new WSCallerExecutor(caller, event,
+	                		publishAttempt, this.getEventDistributorMapper(), successResponseMatchRegexPattern));
+	                futures.add(future);
 				}
-				
-				Caller caller = this.getTargetId2Caller().get(targetId);
-				String successResponseMatchRegexPattern = this.getTargetId2SuccessResponseMatchRegexPattern().get(targetId);
-				LOGGER.debug("submitted for processing for targetId {}", publishAttempt);
-                Future<Boolean> future = this.getDistributionExecutor().submit(new WSCallerExecutor(caller, event,
-                		publishAttempt, this.getEventDistributorMapper(), successResponseMatchRegexPattern));
-                futures.add(future);
 			}
 
 			boolean eventSuccess = true;
@@ -259,6 +271,7 @@ public class EventFetcher implements Runnable
 					eventFromDB.setStatus(EventStatus.FAILURE);
 				currentTime = getZonedDateTime(System.currentTimeMillis());
 				eventFromDB.setUpdateTime(currentTime);
+				eventFromDB.setUpdateBy("EventFetcher");
 				this.getEventDistributorMapper().updateEvent(eventFromDB);
 			}
 			
