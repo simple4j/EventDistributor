@@ -342,6 +342,14 @@
 					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
 					<autoReleaseAfterClose>true</autoReleaseAfterClose>
 				</configuration>
+				  <dependencies>
+					<!-- reference https://stackoverflow.com/questions/70153962/nexus-staging-maven-plugin-maven-deploy-failed-an-api-incompatibility-was-enco -->
+				    <dependency>
+				      <groupId>com.thoughtworks.xstream</groupId>
+				      <artifactId>xstream</artifactId>
+				      <version>1.4.15</version>
+				    </dependency>
+				  </dependencies>				
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -354,8 +362,7 @@
 	RDBMS based messaging as an alternative to other standard messaging like JMS / Kafka
 	</description>
 	<properties>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
-		<project.scm.id>github</project.scm.id>
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.target>17</maven.compiler.target>
 	</properties>
 </project>
