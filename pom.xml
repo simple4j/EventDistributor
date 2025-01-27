@@ -162,7 +162,7 @@
 		<dependency>
 			<groupId>org.simple4j</groupId>
 			<artifactId>APIAOPValidator</artifactId>
-			<version>24.11.03.2-SNAPSHOT</version>
+			<version>25.01.26.0</version>
 		</dependency>
 
         <!-- json -->
@@ -189,7 +189,7 @@
 		<dependency>
 			<groupId>org.simple4j</groupId>
 			<artifactId>WSFeeler</artifactId>
-			<version>24.12.04.2-SNAPSHOT</version>
+			<version>25.01.26.0</version>
 		</dependency>
        
          <!-- mybatis -->
