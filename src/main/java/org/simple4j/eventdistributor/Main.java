@@ -32,6 +32,9 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 
 
+/**
+ * This class holds the main method and the entry point for startup of the application.
+ */
 public class Main
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -56,22 +59,14 @@ public class Main
     private String userIdHeader = "userId";
     private String hostName = null;
     
-    /**
-     * {
-     *      "SUCCESS" : 
-     *      {
-     *          "" : "200",
-     *          "<API name>" : "201"
-     *      },
-     *      "PARAMETER_ERROR" : 
-     *      {
-     *          "" : "412",
-     *      }
-     * }
-     */
     private Map<String, Map<String, Integer>> errorType2HTTPStatusMapping = null;
     
 
+    /**
+     * This method being the entry point, it initializes all the beans with dependency injection,
+     *  initializes web service routes
+     * @param args
+     */
     public static void main(String[] args)
     {
         LOGGER.info("EventDistributor is starting, please wait...");
@@ -495,6 +490,21 @@ public class Main
         return errorType2HTTPStatusMapping;
     }
 
+    /**
+     * This setter will set the mapping for AppResponse to HTTP codes.
+     * The mapping is set via dependency injection
+     * {
+     *      "SUCCESS" : 
+     *      {
+     *          "" : "200",
+     *          "<API name>" : "201"
+     *      },
+     *      "PARAMETER_ERROR" : 
+     *      {
+     *          "" : "412",
+     *      }
+     * }
+     */
     public void setErrorType2HTTPStatusMapping(
             Map<String, Map<String, Integer>> errorType2HTTPStatusMapping)
     {
@@ -518,6 +528,11 @@ public class Main
 		return userIdHeader;
 	}
 
+	/**
+	 * This method can be used to set the header name for sending userid by the authentication systems.
+	 * 
+	 * @param userIdHeader
+	 */
 	public void setUserIdHeader(String userIdHeader)
 	{
 		this.userIdHeader = userIdHeader;

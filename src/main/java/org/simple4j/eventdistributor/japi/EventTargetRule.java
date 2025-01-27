@@ -4,6 +4,10 @@ import java.util.List;
 
 import org.simple4j.eventdistributor.beans.Event;
 
+/**
+ * Abstract class to hold the rules to map event to target systems.
+ * 
+ */
 public abstract class EventTargetRule
 {
 	protected List<String> targetIds = null;
@@ -16,8 +20,15 @@ public abstract class EventTargetRule
 		this.targetIds = targetIds;
 	}
 
-	/*
-	 * Rule evaluation should not depend on source of the event as that will cause conflict with duplicate detection logic which does not include source value check.
+	/**
+	 * This method will return true if the rule matches for the event.
+	 * 
+	 * Rule evaluation should not depend on source of the event as that will cause 
+	 * conflict with duplicate detection logic which does not include source value check.
+	 * 
+	 * @param event - the rule will be applied on this event instance
+	 * @return - return true if the rule matches
+	 * 
 	 */
 	public abstract boolean eval(Event event);
 }

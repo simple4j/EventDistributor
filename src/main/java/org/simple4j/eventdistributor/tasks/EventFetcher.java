@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +27,11 @@ import org.simple4j.wsclient.caller.Caller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Periodic job to fetch new events, process for distribution asynchronously, collect statuses and update in DB.
+ * This will also fetch events struck in IN_PROGRESS state, reposted events and republishes.
+ * 
+ */
 public class EventFetcher implements Runnable
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());

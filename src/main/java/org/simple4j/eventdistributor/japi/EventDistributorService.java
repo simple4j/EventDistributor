@@ -7,6 +7,9 @@ import org.simple4j.eventdistributor.beans.Event;
 import org.simple4j.eventdistributor.beans.HealthCheck;
 import org.simple4j.eventdistributor.beans.HealthCheck.Status;
 
+/**
+ * Business logic interface definition
+ */
 public interface EventDistributorService
 {
 

@@ -12,9 +12,9 @@ import org.slf4j.LoggerFactory;
 /**
  * This interceptor will log method entry and exits using AOP.
  * The logger names used are
- * <fully qualified class name> - to control logging of method entry/exits at class level
- * <fully qualified class name>.parameter.<method name> - to control logging of parameters at class level or method level
- * <fully qualified class name>.returnvalue.<method name> - to control logging of return values at class level or method level
+ * &lt;fully qualified class name&gt; - to control logging of method entry/exits at class level
+ * &lt;fully qualified class name&gt;.parameter.&lt;method name&gt; - to control logging of parameters at class level or method level
+ * &lt;fully qualified class name&gt;.returnvalue.&lt;method name&gt; - to control logging of return values at class level or method level
  * @author sj45615
  *
  */

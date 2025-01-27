@@ -4,6 +4,9 @@ import org.mvel2.MVEL;
 import org.simple4j.eventdistributor.beans.Event;
 import org.simple4j.eventdistributor.japi.EventTargetRule;
 
+/**
+ * Mvel based implementation where the rule can be configured with Mvel expression
+ */
 public class MvelEventTargetRule extends EventTargetRule
 {
 	private String mvelExpression = null;

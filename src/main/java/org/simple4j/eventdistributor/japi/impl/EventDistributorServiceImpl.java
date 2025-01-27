@@ -30,6 +30,9 @@ import org.simple4j.eventdistributor.tasks.EventFetcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Business logic bean implementation.
+ */
 public class EventDistributorServiceImpl implements EventDistributorService
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
