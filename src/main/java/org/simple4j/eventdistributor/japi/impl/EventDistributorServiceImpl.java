@@ -84,6 +84,19 @@ public class EventDistributorServiceImpl implements EventDistributorService
 		this.version = version;
 	}
 
+	/**
+	 * This configuration is list of rules that will be applied and target id is selected based on rule evaluation result.
+	 * 
+	 * Rule evaluation should not depend on source of the event as that will cause 
+	 * conflict with duplicate detection logic which does not include source value check.
+	 * 
+	 * Why evaluation should not depend on source?
+	 * Since duplicate detection is based on business record id, type, subtype and version,
+	 * if there are 2 records with the same business record id, type, subtype and version and different source,
+	 * the record marked as duplicate may miss delivery to one of the target systems based on the overall configuration of EventTargetRule
+	 * 
+	 * @return
+	 */
 	public List<EventTargetRule> getEventTargetRules()
 	{
 		return eventTargetRules;
@@ -106,6 +119,13 @@ public class EventDistributorServiceImpl implements EventDistributorService
 		this.eventDistributorMapper = eventDistributorMapper;
 	}
 
+	/**
+	 * An event will be marked as duplicate if another event is submitted with the same business record id/type/subtype/version
+	 * with in the configured duplicateCheckExpiryMillisec.
+	 * The recent event will be duplicate even if the older event is successfully processed when the recent event is posted.
+	 * 
+	 * @return
+	 */
 	public int getDuplicateCheckExpiryMillisec()
 	{
 		return duplicateCheckExpiryMillisec;
@@ -126,6 +146,12 @@ public class EventDistributorServiceImpl implements EventDistributorService
 		this.eventFetcher = eventFetcher;
 	}
 
+	/**
+	 * This configuration will delay the processing of events by the cooling time configured per source or origin of an event.
+	 * If a cooling period is not set for a given source, those events will get processed at the earliest by EventFetcher.
+	 * 
+	 * @return
+	 */
 	public Map<String, Integer> getSource2NewEventCoolingTimeMillisec()
 	{
 		if(this.source2NewEventCoolingTimeMillisec == null)
@@ -333,6 +359,7 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	@Override
 	public AppResponse<Long> republish(String publishIdStr, String createBy)
 	{
+		AppResponse<Long> ret = new AppResponse<Long>();
 		long publishId = Long.parseLong(publishIdStr);
 
 		//Not using ZonedDateTime.now() to keep precision at millisec and for easier testing 
@@ -340,6 +367,14 @@ public class EventDistributorServiceImpl implements EventDistributorService
 		ZonedDateTime currentZonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentTimeMillis), ZoneId.systemDefault());
 
 		PublishAttempt publishAttempt = this.getEventDistributorMapper().getPublishAttempt(publishId);
+		if(publishAttempt == null)
+		{
+			ret.errorDetails = new ErrorDetails();
+			ret.errorDetails.errorId = System.currentTimeMillis()+"@"+ this.getEventFetcher().getHostName();
+			ret.errorDetails.errorType = ErrorType.PUBLISH_ATTEMPT_NOTFOUND.toString();
+			ret.errorDetails.errorDescription = "The publish attempt not found and cannot republish";
+			return ret;
+		}
         publishAttempt.setPublishId(null);
         publishAttempt.setResponseHttpCode(null);
         publishAttempt.setResponseBody(null);
@@ -350,7 +385,6 @@ public class EventDistributorServiceImpl implements EventDistributorService
         publishAttempt.setUpdateTime(currentZonedDateTime);
         
 		Event event = this.getEventDistributorMapper().getEvent(publishAttempt.getEventId());
-		AppResponse<Long> ret = new AppResponse<Long>();
 		if(event.getStatus().equals(EventStatus.IN_PROGRESS) && event.getStatusExpiryTime().isAfter(currentZonedDateTime))
 		{
 			ret.errorDetails = new ErrorDetails();
@@ -390,13 +424,26 @@ public class EventDistributorServiceImpl implements EventDistributorService
 			LOGGER.error("Returning error response : {}", ret);
 			return ret ;
 		}
-        event.setStatus(EventStatus.ABORT);
-		ZonedDateTime currentTime = ZonedDateTime.now();
-		event.setUpdateTime(currentTime);
-		event.setUpdateBy(updateBy);
-		this.getEventDistributorMapper().updateEvent(event);
-		ret.responseObject = event.getEventId();
-		return ret;
+		if(EventStatus.NEW.equals(event.getStatus()) || EventStatus.IN_PROGRESS.equals(event.getStatus()))
+		{
+	        event.setStatus(EventStatus.ABORT);
+			ZonedDateTime currentTime = ZonedDateTime.now();
+			event.setUpdateTime(currentTime);
+			event.setUpdateBy(updateBy);
+			this.getEventDistributorMapper().updateEvent(event);
+			ret.responseObject = event.getEventId();
+			return ret;
+		}
+		else
+		{
+			ErrorDetails ed = new ErrorDetails();
+			ed.errorId = System.currentTimeMillis() +"@@"+this.hostName;
+			ed.errorType = ErrorType.EVENT_ALREADY_PROCESSED.toString();
+			ed.errorDescription = "Event already processed. Cant abort";
+			ret.errorDetails = ed ;
+			LOGGER.error("Returning error response : {}", ret);
+			return ret ;
+		}
 	}
 	
 }

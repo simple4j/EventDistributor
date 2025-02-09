@@ -115,6 +115,7 @@
               <if test="event.updateBy != null">
                 AND b.UPDATE_BY= #{event.updateBy}
               </if>
+            ORDER BY b.CREATE_TIME DESC
           ) a
 		<![CDATA[
           WHERE a.rn >= #{startPosition}

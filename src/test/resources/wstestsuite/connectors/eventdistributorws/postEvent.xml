@@ -55,7 +55,8 @@
     "request": {
         "method": "POST",
         "urlPattern": "/eventdistributorws/eppublic/V1/event.json",
-        "body": "{\"businessRecordId\" : \"${businessRecordId}\",\"businessRecordType\" : \"${businessRecordType}\",\"source\" : \"${source}\"}",
+        "body": "{\"businessRecordId\" : \"${businessRecordId}\",\"businessRecordType\" : \"${businessRecordType}\",\"businessRecordSubType\" : \"${businessRecordSubType}\",\"businessRecordVersion\" : \"${businessRecordVersion}\",\"source\" : \"${source}\"}",
+        "body": "{\"businessRecordId\" : \"${businessRecordId}\",\"businessRecordType\" : \"${businessRecordType}\",                                                                                                                  \"source\" : \"${source}\"}",
         "staticHeaders": {
             "Content-Type": "application/JSON"
         },

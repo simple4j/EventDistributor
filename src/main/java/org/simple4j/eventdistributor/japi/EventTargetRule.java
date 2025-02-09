@@ -21,10 +21,7 @@ public abstract class EventTargetRule
 	}
 
 	/**
-	 * This method will return true if the rule matches for the event.
-	 * 
-	 * Rule evaluation should not depend on source of the event as that will cause 
-	 * conflict with duplicate detection logic which does not include source value check.
+	 * This method will return true if the rule results in a matches for the event passed.
 	 * 
 	 * @param event - the rule will be applied on this event instance
 	 * @return - return true if the rule matches

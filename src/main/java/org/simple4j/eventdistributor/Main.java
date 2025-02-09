@@ -168,13 +168,6 @@ public class Main
             ctx.result("{}");
         });
 
-        javalin.post(main.getUrlBase()+"/eventFetcherTrigger.json", ctx -> 
-        {
-        	pauseEventFetcher = false;
-            setHeader(ctx);
-            ctx.result("{}");
-        });
-
         javalin.get(main.getUrlBase()+"/serverhealth.json", ctx -> 
         {
             AppResponse<HealthCheck> ret = main.getEventDistributorService().getHealthCheck();
@@ -182,6 +175,13 @@ public class Main
             setHeader(ctx);
             ctx.result(OBJECT_MAPPER.writeValueAsString(healthCheckRes));
         });
+
+//        javalin.post(main.getUrlBase()+"/eventFetcherTrigger.json", ctx -> 
+//        {
+//        	pauseEventFetcher = false;
+//            setHeader(ctx);
+//            ctx.result("{}");
+//        });
 
         javalin.post(main.getUrlBase()+"/event.json", ctx -> 
         {
@@ -219,7 +219,7 @@ public class Main
                 return;
             }
             
-            ctx.result("{}");
+            ctx.result("{\"eventId\":\""+ret.responseObject+"\"}");
         });
 
         javalin.get(main.getUrlBase()+"/event.json", ctx -> 
@@ -308,7 +308,7 @@ public class Main
                 return;
             }
             
-            ctx.result("{}");
+            ctx.result("{\"eventId\":\""+ret.responseObject+"\"}");
         });
 
         javalin.post(main.getUrlBase()+"/repost/publish.json", ctx -> 
@@ -333,7 +333,7 @@ public class Main
                 return;
             }
             
-            ctx.result("{}");
+            ctx.result("{\"publishId\":\""+ret.responseObject+"\"}");
         });
 
         javalin.post(main.getUrlBase()+"/abort/event.json", ctx -> 

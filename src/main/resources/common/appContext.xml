@@ -53,9 +53,19 @@
 						<entry key="" value="412"/>
 					</map>
 				</entry>
-				<entry key="ENTRY_NOTFOUND">
+				<entry key="EVENT_NOTFOUND">
 					<map>
 						<entry key="" value="404"/>
+					</map>
+				</entry>
+				<entry key="PUBLISH_ATTEMPT_NOTFOUND">
+					<map>
+						<entry key="" value="404"/>
+					</map>
+				</entry>
+				<entry key="EVENT_INPROGRESS">
+					<map>
+						<entry key="" value="401"/>
 					</map>
 				</entry>
 				<entry key="CALLER_NOTAUTHORIZED">
