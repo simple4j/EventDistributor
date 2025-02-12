@@ -40,7 +40,7 @@ public class EventFetcher implements Runnable
 	private long sleepTimeInMillisec = 1000;
 	private int maxFetchRecordCountPerBatch = 10;
 	private ThreadPoolExecutor distributionExecutor = null;
-	private int distributionExecutorCoreThreadPoolSize = 5;
+	private int distributionExecutorCoreThreadPoolSize = 10;
 	private int distributionExecutorMaxThreadPoolSize = 10;
 	private long distributionExecutorKeepaliveSeconds = 300;
 	private long lockExpiryMillisec = 900000;
