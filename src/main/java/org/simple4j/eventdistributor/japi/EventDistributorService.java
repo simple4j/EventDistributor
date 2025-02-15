@@ -15,13 +15,14 @@ public interface EventDistributorService
 
 	public void setHealthCheck(Status status);
 	public AppResponse<HealthCheck> getHealthCheck();
-	public AppResponse<Long> postEvent(Event event);
+
+	public AppResponse<Long> postEvent(Event event, String callerId, String userId);
 	public AppResponse<Event> getEvent(String callerId, String eventId);
 	public AppResponse<List<Event>> getEvents(String callerId, String startPosition, String numberOfRecords,
 			Event event);
-	public AppResponse<Long> repostEvent(String eventIdStr, String createBy);
-	public AppResponse<Long> republish(String publishIdStr, String createBy);
-	public AppResponse<Long> abortEvent(String eventId, String updateBy);
+	public AppResponse<Long> repostEvent(String eventIdStr, String callerId, String userId);
+	public AppResponse<Long> republish(String publishIdStr, String callerId, String userId);
+	public AppResponse<Long> abortEvent(String eventId, String callerId, String userId);
 	public void init();
 
 }

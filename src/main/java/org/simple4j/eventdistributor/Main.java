@@ -122,6 +122,7 @@ public class Main
             }
             else
             {
+            	LOGGER.info("Setting HTTP code 200");
                 ctx.status(200);
             }
             
@@ -187,28 +188,23 @@ public class Main
         {
             AppResponse<Long> ret = null;
             String callerId = ctx.header("callerId");
-            String userId = ctx.header(main.getUserIdHeader());
+            LOGGER.debug("callerId 1 {}", callerId);
+			callerId = getStringWithEmptyCheck(callerId, null);
+            LOGGER.debug("callerId 2 {}", callerId);
+            String userId = getStringWithEmptyCheck(ctx.header(main.getUserIdHeader()), null);
             
             String body = ctx.body();
             Event event = null;
             try
             {
             	event = OBJECT_MAPPER.readValue(body, Event.class);
-            	if(callerId != null && callerId.trim().length() > 0)
-            	{
-            		event.setCreateBy(callerId);
-            	}
-            	if(userId != null && userId.trim().length() > 0)
-            	{
-            		event.setCreateBy(userId);
-            	}
             }
             catch(Exception e)
             {
                 throw new RuntimeException("Error parsing request body <" + body +">",  e);
             }
             
-            ret = main.getEventDistributorService().postEvent(event);
+            ret = main.getEventDistributorService().postEvent(event, callerId, userId);
 
             //setting AppResponse object for usage in javalin.after handler
             ctx.attribute(JAPI_RETURN_OBJECT, ret);
@@ -289,15 +285,11 @@ public class Main
         javalin.post(main.getUrlBase()+"/repost/event.json", ctx -> 
         {
             AppResponse<Long> ret = null;
-            String callerId = ctx.header("callerId");
-            String userId = ctx.header(main.getUserIdHeader());
+            String callerId = getStringWithEmptyCheck(ctx.header("callerId"), null);
+            String userId = getStringWithEmptyCheck(ctx.header(main.getUserIdHeader()), null);
             String eventId = ctx.queryParam("eventId");
             
-    		String createBy = null;
-        	createBy = getStringWithEmptyCheck(callerId, null);
-        	createBy = getStringWithEmptyCheck(userId, createBy);
-
-        	ret = main.getEventDistributorService().repostEvent(eventId, createBy);
+        	ret = main.getEventDistributorService().repostEvent(eventId, callerId, userId);
 
             //setting AppResponse object for usage in javalin.after handler
             ctx.attribute(JAPI_RETURN_OBJECT, ret);
@@ -314,15 +306,11 @@ public class Main
         javalin.post(main.getUrlBase()+"/repost/publish.json", ctx -> 
         {
             AppResponse<Long> ret = null;
-            String callerId = ctx.header("callerId");
-            String userId = ctx.header(main.getUserIdHeader());
+            String callerId = getStringWithEmptyCheck(ctx.header("callerId"), null);
+            String userId = getStringWithEmptyCheck(ctx.header(main.getUserIdHeader()), null);
             String publishId = ctx.queryParam("publishId");
             
-    		String createBy = null;
-        	createBy = getStringWithEmptyCheck(callerId, null);
-        	createBy = getStringWithEmptyCheck(userId, createBy);
-            
-            ret = main.getEventDistributorService().republish(publishId, createBy);
+            ret = main.getEventDistributorService().republish(publishId, callerId, userId);
 
             //setting AppResponse object for usage in javalin.after handler
             ctx.attribute(JAPI_RETURN_OBJECT, ret);
@@ -339,15 +327,11 @@ public class Main
         javalin.post(main.getUrlBase()+"/abort/event.json", ctx -> 
         {
             AppResponse<Long> ret = null;
-            String callerId = ctx.header("callerId");
-            String userId = ctx.header(main.getUserIdHeader());
+            String callerId = getStringWithEmptyCheck(ctx.header("callerId"), null);
+            String userId = getStringWithEmptyCheck(ctx.header(main.getUserIdHeader()), null);
             String eventId = ctx.queryParam("eventId");
             
-    		String updateBy = null;
-        	updateBy = getStringWithEmptyCheck(callerId, null);
-        	updateBy = getStringWithEmptyCheck(userId, updateBy);
-
-        	ret = main.getEventDistributorService().abortEvent(eventId, updateBy);
+        	ret = main.getEventDistributorService().abortEvent(eventId, callerId, userId);
 
             //setting AppResponse object for usage in javalin.after handler
             ctx.attribute(JAPI_RETURN_OBJECT, ret);
@@ -410,6 +394,7 @@ public class Main
         {
             return 200;
         }
+        LOGGER.info("Error id is {}", appResponse.errorDetails.errorId);
         Map<String, Integer> apiCallName2HTTPStatusMapping = this.getErrorType2HTTPStatusMapping().get(appResponse.errorDetails.errorType.toString());
         if(apiCallName2HTTPStatusMapping != null)
         {

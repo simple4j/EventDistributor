@@ -31,10 +31,17 @@
 		<property name="method2Validators" >
 			<map>
 				<!-- One entry for every method that needs parameter validation -->
-				<entry key="public org.simple4j.apiaopvalidator.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.postEvent(org.simple4j.eventdistributor.beans.Event)">
+				<entry key="public org.simple4j.apiaopvalidator.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.postEvent(org.simple4j.eventdistributor.beans.Event,java.lang.String,java.lang.String)">
 					<!-- list of ParameterValidator for each of the parameters -->
 					<list>
 						<ref bean="eventValidator"/>
+						<bean parent="callerIdValidator">
+							<property name="argumentIndex" value="1" />
+						</bean>
+						<bean parent="createByValidator">
+							<property name="argumentIndex" value="2" />
+							<property name="fieldName" value="userId" />
+						</bean>
 					</list>
 				</entry>
 
@@ -61,37 +68,53 @@
 				</entry>
 
 				<!-- repostEvent(eventId, createBy) -->
-				<entry key="public org.simple4j.apiaopvalidator.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.repostEvent(java.lang.String,java.lang.String)">
+				<entry key="public org.simple4j.apiaopvalidator.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.repostEvent(java.lang.String,java.lang.String,java.lang.String)">
 					<!-- list of ParameterValidator for each of the parameters -->
 					<list>
 						<bean parent="eventIdValidator">
 							<property name="argumentIndex" value="0" />
 						</bean>
-						<ref bean="createByValidator"/>
+						<bean parent="callerIdValidator">
+							<property name="argumentIndex" value="1" />
+						</bean>
+						<bean parent="createByValidator">
+							<property name="argumentIndex" value="2" />
+							<property name="fieldName" value="userId" />
+						</bean>
 					</list>
 				</entry>
 
 				<!-- republish(publishId, createBy)-->
-				<entry key="public org.simple4j.apiaopvalidator.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.republish(java.lang.String,java.lang.String)">
+				<entry key="public org.simple4j.apiaopvalidator.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.republish(java.lang.String,java.lang.String,java.lang.String)">
 					<!-- list of ParameterValidator for each of the parameters -->
 					<list>
 						<bean parent="eventIdValidator">
 							<property name="fieldName" value="publishId" />
 							<property name="argumentIndex" value="0" />
 						</bean>
-						<ref bean="createByValidator"/>
+						<bean parent="callerIdValidator">
+							<property name="argumentIndex" value="1" />
+						</bean>
+						<bean parent="createByValidator">
+							<property name="argumentIndex" value="2" />
+							<property name="fieldName" value="userId" />
+						</bean>
 					</list>
 				</entry>
 
 				<!-- abortEvent(eventId, updateBy) -->
-				<entry key="public org.simple4j.apiaopvalidator.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.abortEvent(java.lang.String,java.lang.String)">
+				<entry key="public org.simple4j.apiaopvalidator.beans.AppResponse org.simple4j.eventdistributor.japi.impl.EventDistributorServiceImpl.abortEvent(java.lang.String,java.lang.String,java.lang.String)">
 					<!-- list of ParameterValidator for each of the parameters -->
 					<list>
 						<bean parent="eventIdValidator">
 							<property name="argumentIndex" value="0" />
 						</bean>
+						<bean parent="callerIdValidator">
+							<property name="argumentIndex" value="1" />
+						</bean>
 						<bean parent="createByValidator">
-							<property name="fieldName" value="updateBy" />
+							<property name="argumentIndex" value="2" />
+							<property name="fieldName" value="userId" />
 						</bean>
 					</list>
 				</entry>
@@ -102,9 +125,7 @@
 	<bean id="callerIdValidator" class="org.simple4j.apiaopvalidator.validation.MethodArgumentValidator">
 		<property name="fieldName" value="callerId" />
 		<property name="argumentIndex" value="0" />
-		<!--
-		<property name="argumentPropertyPath" value="callerId" />
-		-->
+		<property name="doNullCheck" value="true" />
 		<property name="validators">
 			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
 			<list>
@@ -333,7 +354,9 @@
 	</bean>
 
 	<util:list id="createByValidatorList">
+	<!-- -
 		<bean class="org.simple4j.apiaopvalidator.validation.NullValidator" />
+	-->
 		<bean class="org.simple4j.apiaopvalidator.validation.MinLengthValidator" >
 			<property name="minLength" value="1"></property>
 		</bean>
@@ -346,6 +369,7 @@
 	<bean id="createByValidator" class="org.simple4j.apiaopvalidator.validation.MethodArgumentValidator">
 		<property name="fieldName" value="createBy" />
 		<property name="argumentIndex" value="1" />
+		<property name="doNullCheck" value="false" />
 		<property name="validators" ref="createByValidatorList" />
 	</bean>
 

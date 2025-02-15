@@ -211,12 +211,12 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	}
 
 	@Override
-	public AppResponse<Long> postEvent(Event event)
+	public AppResponse<Long> postEvent(Event event, String callerId, String userId)
 	{
-		return this.postEvent(event, true);
+		return this.postEvent(event, true, callerId, userId);
 	}
 	
-	private AppResponse<Long> postEvent(Event event, boolean enableDuplicateCheck)
+	private AppResponse<Long> postEvent(Event event, boolean enableDuplicateCheck, String callerId, String userId)
 	{
 
 		//Not using ZonedDateTime.now() to keep precision at millisec and for easier testing 
@@ -225,6 +225,8 @@ public class EventDistributorServiceImpl implements EventDistributorService
 
 		List<Event> duplicateEvents = null;
 		
+		String createBy = this.getCreateUpdateBy(callerId, userId);
+		event.setCreateBy(createBy);
 		if(enableDuplicateCheck)
 		{
 			Event inputClone = new Event();
@@ -345,19 +347,18 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	}
 
 	@Override
-	public AppResponse<Long> repostEvent(String eventIdStr, String createBy)
+	public AppResponse<Long> repostEvent(String eventIdStr, String callerId, String userId)
 	{
 		long eventId = Long.parseLong(eventIdStr);
 		Event event = this.getEventDistributorMapper().getEvent(eventId);
         event.setRepostParentEventId(event.getEventId());
         event.setEventId(null);
         event.setStatus(null);
-		event.setCreateBy(createBy);
-		return this.postEvent(event, false);
+		return this.postEvent(event, false, callerId, userId);
 	}
 	
 	@Override
-	public AppResponse<Long> republish(String publishIdStr, String createBy)
+	public AppResponse<Long> republish(String publishIdStr, String callerId, String userId)
 	{
 		AppResponse<Long> ret = new AppResponse<Long>();
 		long publishId = Long.parseLong(publishIdStr);
@@ -375,6 +376,7 @@ public class EventDistributorServiceImpl implements EventDistributorService
 			ret.errorDetails.errorDescription = "The publish attempt not found and cannot republish";
 			return ret;
 		}
+		String createBy = this.getCreateUpdateBy(callerId, userId);
         publishAttempt.setPublishId(null);
         publishAttempt.setResponseHttpCode(null);
         publishAttempt.setResponseBody(null);
@@ -409,7 +411,7 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	}
 
 	@Override
-	public AppResponse<Long> abortEvent(String eventIdStr, String updateBy)
+	public AppResponse<Long> abortEvent(String eventIdStr, String callerId, String userId)
 	{
 		long eventId = Long.parseLong(eventIdStr);
 		Event event = this.getEventDistributorMapper().getEvent(eventId);
@@ -429,7 +431,8 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	        event.setStatus(EventStatus.ABORT);
 			ZonedDateTime currentTime = ZonedDateTime.now();
 			event.setUpdateTime(currentTime);
-			event.setUpdateBy(updateBy);
+			String createBy = this.getCreateUpdateBy(callerId, userId);
+			event.setUpdateBy(createBy);
 			this.getEventDistributorMapper().updateEvent(event);
 			ret.responseObject = event.getEventId();
 			return ret;
@@ -446,4 +449,23 @@ public class EventDistributorServiceImpl implements EventDistributorService
 		}
 	}
 	
+	private String getCreateUpdateBy(String callerId, String userId)
+	{
+		String ret = null;
+		ret = getStringWithEmptyCheck(callerId, null);
+		ret = getStringWithEmptyCheck(userId, ret);
+		return ret;
+	}
+	
+
+	private String getStringWithEmptyCheck(String in, String defaultValue)
+	{
+		String ret = defaultValue;
+		if(in != null && in.trim().length() > 0)
+		{
+			ret = in;
+		}
+		return ret;
+	}
+
 }
