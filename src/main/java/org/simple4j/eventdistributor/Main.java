@@ -3,6 +3,7 @@ package org.simple4j.eventdistributor;
 import java.lang.invoke.MethodHandles;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,9 +93,8 @@ public class Main
         javalin.before(ctx ->
         {
             long startTimeMillisec = System.currentTimeMillis();
-            ctx.attribute(START_TIME_MILLISEC, startTimeMillisec);
-            
 			String requestId = startTimeMillisec + "@" + main.hostName;
+            ctx.attribute(START_TIME_MILLISEC, startTimeMillisec);
 
             String headerRequestId = ctx.header(REQUEST_ID_KEY);
             if (StringUtils.isNotBlank(headerRequestId))
@@ -122,8 +122,8 @@ public class Main
             }
             else
             {
-            	LOGGER.info("Setting HTTP code 200");
-                ctx.status(200);
+//            	LOGGER.info("Setting HTTP code 200");
+//                ctx.status(200);
             }
             
             finishCall(ctx);
@@ -131,6 +131,7 @@ public class Main
 
         javalin.exception(Exception.class, (e, ctx) ->
         {
+            LOGGER.error("Status {}", ctx.statusCode());
             LOGGER.error("Unhandled exception", e);
             setHeader(ctx);
             ctx.status(500);
@@ -258,7 +259,25 @@ public class Main
             event.setSource(getStringWithEmptyCheck(ctx.queryParam("source"), null));
             String statusStr = getStringWithEmptyCheck(ctx.queryParam("status"), null);
             if(statusStr != null)
-				event.setStatus(EventStatus.valueOf(statusStr));
+            {
+            	try
+            	{
+    				event.setStatus(EventStatus.valueOf(statusStr));
+            	}
+            	catch(IllegalArgumentException e)
+            	{
+            		ret = new AppResponse<>();
+                    ctx.attribute(JAPI_RETURN_OBJECT, ret);
+            		ErrorDetails ed = new ErrorDetails();
+            		ed.errorId = System.currentTimeMillis() + "@" + main.hostName;
+            		ed.errorType = "PARAMETER_ERROR";
+            		ed.errorReason = new ArrayList<String>();
+            		ed.errorReason.add("event.status-invalid");
+            		ret.errorDetails = ed;
+                	ctx.result(OBJECT_MAPPER.writeValueAsString(ed));
+                    return;
+            	}
+            }
             event.setProcessingHost(getStringWithEmptyCheck(ctx.queryParam("processingHost"), null));
             event.setCreateBy(getStringWithEmptyCheck(ctx.queryParam("createBy"), null));
             String startPosition = getStringWithEmptyCheck(ctx.queryParam("startPosition"), null);
@@ -429,9 +448,9 @@ public class Main
     private static void finishCall(Context ctx)
     {
         long startTimeMillisec = ctx.attribute(START_TIME_MILLISEC);
-        LOGGER.info("End request url is {}, method is {}, time {}s, query string is {}", ctx.url(),
+        LOGGER.info("End request url is {}, method is {}, time {}s, query string is {}, response code is {}", ctx.url(),
         		ctx.method(), (System.currentTimeMillis() - startTimeMillisec) / 1000.0,
-        		ctx.queryString());
+        		ctx.queryString(), ctx.statusCode());
         MDC.clear();
     }
     

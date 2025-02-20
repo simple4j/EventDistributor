@@ -26,7 +26,8 @@
             "Content-Type": "application/JSON"
         },
         "headers": {
-        "callerId":"${callerId}"
+        "callerId":"${callerId}",
+        "userId":"${userId}"
         }
     },
     "response": {

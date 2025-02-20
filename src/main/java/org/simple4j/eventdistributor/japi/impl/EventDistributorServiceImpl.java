@@ -51,6 +51,10 @@ public class EventDistributorServiceImpl implements EventDistributorService
 
 	private EventFetcher eventFetcher = null;
 	private Map<String, Integer> source2NewEventCoolingTimeMillisec = null;
+	
+	private Map<String, String> api2AllowedCallerIdsRegEx = null;
+	private Map<String, String> api2AllowedUserIdsRegEx = null;
+	
 
 	private String hostName;
 	
@@ -164,6 +168,30 @@ public class EventDistributorServiceImpl implements EventDistributorService
 		this.source2NewEventCoolingTimeMillisec = source2NewEventCoolingPeriod;
 	}
 
+	public Map<String, String> getApi2AllowedCallerIdsRegEx()
+	{
+		if(this.api2AllowedCallerIdsRegEx == null)
+			this.api2AllowedCallerIdsRegEx = new HashMap<String, String>();
+		return api2AllowedCallerIdsRegEx;
+	}
+
+	public void setApi2AllowedCallerIdsRegEx(Map<String, String> api2AllowedCallerIdsRegEx)
+	{
+		this.api2AllowedCallerIdsRegEx = api2AllowedCallerIdsRegEx;
+	}
+
+	public Map<String, String> getApi2AllowedUserIdsRegEx()
+	{
+		if(this.api2AllowedUserIdsRegEx == null)
+			this.api2AllowedUserIdsRegEx = new HashMap<String, String>();
+		return api2AllowedUserIdsRegEx;
+	}
+
+	public void setApi2AllowedUserIdsRegEx(Map<String, String> api2AllowedUserIdsRegEx)
+	{
+		this.api2AllowedUserIdsRegEx = api2AllowedUserIdsRegEx;
+	}
+
 	public int getEventFetcherExecutorCoreThreadPoolSize()
 	{
 		return eventFetcherExecutorCoreThreadPoolSize;
@@ -213,7 +241,66 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	@Override
 	public AppResponse<Long> postEvent(Event event, String callerId, String userId)
 	{
+		String api = "postEvent";
+		AppResponse ret = checkCaller(callerId, api);
+		if(ret != null)
+			return ret;
+		ret = checkUser(userId, api);
+		if(ret != null)
+			return ret;
 		return this.postEvent(event, true, callerId, userId);
+	}
+
+	private AppResponse checkCaller(String callerId, String api)
+	{
+		if(this.getApi2AllowedCallerIdsRegEx().containsKey(api))
+		{
+			if(!callerId.matches(this.getApi2AllowedCallerIdsRegEx().get(api)))
+			{
+				AppResponse ret = new AppResponse();
+				ret.errorDetails = new ErrorDetails();
+				ret.errorDetails.errorId = System.currentTimeMillis() + "@" + this.getEventFetcher().getHostName();
+				ret.errorDetails.errorType = ErrorType.CALLER_NOTAUTHORIZED.toString();
+				ret.errorDetails.errorDescription = "Caller id not configured for operation.";
+				return ret;
+			}
+		}
+		else
+		{
+			AppResponse ret = new AppResponse();
+			ret.errorDetails = new ErrorDetails();
+			ret.errorDetails.errorId = System.currentTimeMillis() + "@" + this.getEventFetcher().getHostName();
+			ret.errorDetails.errorType = ErrorType.CALLER_NOTAUTHORIZED.toString();
+			ret.errorDetails.errorDescription = "No callers configured for operation.";
+			return ret;
+		}
+		return null;
+	}
+	
+	private AppResponse checkUser(String userId, String api)
+	{
+		if(this.getApi2AllowedUserIdsRegEx().containsKey(api))
+		{
+			if(!userId.matches(this.getApi2AllowedUserIdsRegEx().get(api)))
+			{
+				AppResponse ret = new AppResponse();
+				ret.errorDetails = new ErrorDetails();
+				ret.errorDetails.errorId = System.currentTimeMillis() + "@" + this.getEventFetcher().getHostName();
+				ret.errorDetails.errorType = ErrorType.USER_NOTAUTHORIZED.toString();
+				ret.errorDetails.errorDescription = "User id not configured for operation.";
+				return ret;
+			}
+		}
+		else
+		{
+			AppResponse ret = new AppResponse();
+			ret.errorDetails = new ErrorDetails();
+			ret.errorDetails.errorId = System.currentTimeMillis() + "@" + this.getEventFetcher().getHostName();
+			ret.errorDetails.errorType = ErrorType.USER_NOTAUTHORIZED.toString();
+			ret.errorDetails.errorDescription = "No user configured for operation.";
+			return ret;
+		}
+		return null;
 	}
 	
 	private AppResponse<Long> postEvent(Event event, boolean enableDuplicateCheck, String callerId, String userId)
@@ -327,9 +414,21 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	@Override
 	public AppResponse<Event> getEvent(String callerId, String eventIdStr)
 	{
+		String api = "getEvent";
+		AppResponse<Event> ret = checkCaller(callerId, api);
+		if(ret != null)
+			return ret;
+
 		long eventId = Long.parseLong(eventIdStr);
-		AppResponse<Event> ret = new AppResponse<Event>();
+		ret = new AppResponse<Event>();
 		Event event = this.getEventDistributorMapper().getEvent(eventId);
+		if(event == null)
+		{
+			ret.errorDetails = new ErrorDetails();
+			ret.errorDetails.errorId = System.currentTimeMillis()+"@"+ this.getEventFetcher().getHostName();
+			ret.errorDetails.errorType = ErrorType.EVENT_NOTFOUND.toString();
+			ret.errorDetails.errorDescription = "The event not found";
+		}
 		ret.responseObject = event;
 		return ret ;
 	}
@@ -338,10 +437,15 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	public AppResponse<List<Event>> getEvents(String callerId, String startPositionStr, String numberOfRecordsStr,
 			Event event)
 	{
+		String api = "getEvents";
+		AppResponse<List<Event>> ret = checkCaller(callerId, api);
+		if(ret != null)
+			return ret;
+
 		int startPosition = Integer.parseInt(startPositionStr);
 		int numberOfRecords = Integer.parseInt(numberOfRecordsStr);
 		
-		AppResponse<List<Event>> ret = new AppResponse<List<Event>>();
+		ret = new AppResponse<List<Event>>();
 		ret.responseObject = this.getEventDistributorMapper().getEvents(event, startPosition, numberOfRecords);
 		return ret;
 	}
@@ -349,6 +453,14 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	@Override
 	public AppResponse<Long> repostEvent(String eventIdStr, String callerId, String userId)
 	{
+		String api = "repostEvent";
+		AppResponse ret = checkCaller(callerId, api);
+		if(ret != null)
+			return ret;
+		ret = checkUser(userId, api);
+		if(ret != null)
+			return ret;
+
 		long eventId = Long.parseLong(eventIdStr);
 		Event event = this.getEventDistributorMapper().getEvent(eventId);
         event.setRepostParentEventId(event.getEventId());
@@ -360,7 +472,15 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	@Override
 	public AppResponse<Long> republish(String publishIdStr, String callerId, String userId)
 	{
-		AppResponse<Long> ret = new AppResponse<Long>();
+		String api = "republish";
+		AppResponse<Long> ret = checkCaller(callerId, api);
+		if(ret != null)
+			return ret;
+		ret = checkUser(userId, api);
+		if(ret != null)
+			return ret;
+
+		ret = new AppResponse<Long>();
 		long publishId = Long.parseLong(publishIdStr);
 
 		//Not using ZonedDateTime.now() to keep precision at millisec and for easier testing 
@@ -413,9 +533,17 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	@Override
 	public AppResponse<Long> abortEvent(String eventIdStr, String callerId, String userId)
 	{
+		String api = "abortEvent";
+		AppResponse<Long> ret = checkCaller(callerId, api);
+		if(ret != null)
+			return ret;
+		ret = checkUser(userId, api);
+		if(ret != null)
+			return ret;
+
 		long eventId = Long.parseLong(eventIdStr);
 		Event event = this.getEventDistributorMapper().getEvent(eventId);
-		AppResponse<Long> ret = new AppResponse<Long>();
+		ret = new AppResponse<Long>();
 		if(event == null)
 		{
 			ErrorDetails ed = new ErrorDetails();

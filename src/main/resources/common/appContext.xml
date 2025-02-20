@@ -103,6 +103,26 @@
 			</map>
 		</property>
 		<property name="duplicateCheckExpiryMillisec" value="60000"></property>
+		
+		<property name="api2AllowedCallerIdsRegEx">
+			<map>
+				<entry key="postEvent" value="(SELF)|(ADMIN_UI)|(CALLER1)" />
+				<entry key="getEvent" value="(SELF)|(ADMIN_UI)|(CALLER1)" />
+				<entry key="getEvents" value="(SELF)|(ADMIN_UI)|(CALLER1)" />
+				<entry key="repostEvent" value="(SELF)|(ADMIN_UI)|(CALLER1)" />
+				<entry key="republish" value="(SELF)|(ADMIN_UI)|(CALLER1)" />
+				<entry key="abortEvent" value="(SELF)|(ADMIN_UI)|(CALLER1)" />
+			</map>
+		</property>
+		
+		<property name="api2AllowedUserIdsRegEx">
+			<map>
+				<entry key="postEvent" value="[0-9]*" />
+				<entry key="repostEvent" value="[0-9]*" />
+				<entry key="republish" value="[0-9]*" />
+				<entry key="abortEvent" value="[0-9]*" />
+			</map>
+		</property>
 	</bean>
 	
 	<util:list id="eventTargetRules">
