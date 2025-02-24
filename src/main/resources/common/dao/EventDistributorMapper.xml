@@ -236,6 +236,15 @@
 		]]>
     </select>
 
+	<select id="getEventStatus" parameterType="java.lang.Long" resultType="org.simple4j.eventdistributor.beans.EventStatus">
+		<![CDATA[
+			SELECT
+				b.STATUS
+			FROM EVENT b
+			WHERE b.EVENT_ID = #{eventId}
+		]]>
+    </select>
+
 	<select id="selectTargetFromEvent" parameterType="java.lang.Integer" resultType="java.lang.String">
 		<![CDATA[
 			SELECT TARGET_ID

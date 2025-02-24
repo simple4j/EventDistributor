@@ -205,8 +205,8 @@ public class EventFetcher implements Runnable
 			for (String targetId : targetIds)
 			{
 				LOGGER.debug("processing targetId {}", targetId);
-				Event eventFromDB = this.getEventDistributorMapper().getEvent(event.getEventId());
-				if(eventFromDB.getStatus().equals(EventStatus.ABORT))
+				EventStatus eventStatusFromDB = this.getEventDistributorMapper().getEventStatus(event.getEventId());
+				if(EventStatus.ABORT.equals(eventStatusFromDB))
 					break;
 				PublishAttempt successPublishAttempt = targetId2SUCCESSPublishAttempt.get(targetId);
 				PublishAttempt publishAttempt = targetId2NEWPublishAttempt.get(targetId);

@@ -131,7 +131,7 @@
 			<list>
 				<bean class="org.simple4j.apiaopvalidator.validation.NullValidator" />
 				<bean class="org.simple4j.apiaopvalidator.validation.RegExpValidator" >
-					<property name="regExp" value="(SELF)|(ADMIN_UI)|(CALLER1)"></property>
+					<property name="regExp" value="(SELF)|(ADMIN_UI)|(CALLER1)|(CALLER12345)"></property>
 				</bean>
 			</list>
 		</property>

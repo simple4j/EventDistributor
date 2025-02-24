@@ -73,6 +73,11 @@
 						<entry key="" value="403"/>
 					</map>
 				</entry>
+				<entry key="USER_NOTAUTHORIZED">
+					<map>
+						<entry key="" value="403"/>
+					</map>
+				</entry>
 				<entry key="RUNTIME_ERROR">
 					<map>
 						<entry key="" value="500"/>

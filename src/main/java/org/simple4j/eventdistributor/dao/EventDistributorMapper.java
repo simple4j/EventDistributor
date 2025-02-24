@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Param;
 
 import org.simple4j.eventdistributor.beans.Event;
+import org.simple4j.eventdistributor.beans.EventStatus;
 import org.simple4j.eventdistributor.beans.PublishAttempt;
 
 public interface EventDistributorMapper
@@ -22,6 +23,8 @@ public interface EventDistributorMapper
 	public Long getPublishAttemptId();
 
 	public Event getEvent(@Param("eventId") long eventId);
+
+	public EventStatus getEventStatus(@Param("eventId") long eventId);
 
 	public PublishAttempt getPublishAttempt(@Param("publishId") long publishId);
 

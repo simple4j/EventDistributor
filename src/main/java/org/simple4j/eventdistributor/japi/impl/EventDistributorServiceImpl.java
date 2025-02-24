@@ -463,6 +463,17 @@ public class EventDistributorServiceImpl implements EventDistributorService
 
 		long eventId = Long.parseLong(eventIdStr);
 		Event event = this.getEventDistributorMapper().getEvent(eventId);
+		if(event == null)
+		{
+			ret = new AppResponse<Long>();
+			ErrorDetails ed = new ErrorDetails();
+			ed.errorId = System.currentTimeMillis() +"@@"+this.hostName;
+			ed.errorType = ErrorType.EVENT_NOTFOUND.toString();
+			ed.errorDescription = "Event missing in db. Cant abort";
+			ret.errorDetails = ed ;
+			LOGGER.error("Returning error response : {}", ret);
+			return ret ;
+		}
         event.setRepostParentEventId(event.getEventId());
         event.setEventId(null);
         event.setStatus(null);

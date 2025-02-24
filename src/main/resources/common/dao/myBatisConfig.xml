@@ -9,6 +9,7 @@ PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
     </settings>
   <typeAliases>
       <typeAlias type="org.simple4j.eventdistributor.beans.Event" alias="Event"></typeAlias>
+<!--      <typeAlias type="org.simple4j.eventdistributor.beans.EventStatus" alias="EventStatus"></typeAlias> -->
       <typeAlias type="org.simple4j.eventdistributor.beans.PublishAttempt" alias="PublishAttempt"></typeAlias>
   </typeAliases>
   <mappers>

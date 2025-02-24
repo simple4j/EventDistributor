@@ -40,7 +40,7 @@
 		</property>
 		<property name="responseBodyParsers">
 			<map>
-				<entry key="(200)|(208)|(412)" value-ref="jsonBodyParser"></entry>
+				<entry key="(200)|(208)|(412)|(403)|(404)" value-ref="jsonBodyParser"></entry>
 			</map>
 		</property>
 	</bean>
@@ -75,7 +75,7 @@
 		</property>
 		<property name="responseBodyParsers">
 			<map>
-				<entry key="(200)|(208)|(412)" value-ref="jsonBodyParser"></entry>
+				<entry key="(200)|(208)|(412)|(403)|(404)" value-ref="jsonBodyParser"></entry>
 			</map>
 		</property>
 	</bean>

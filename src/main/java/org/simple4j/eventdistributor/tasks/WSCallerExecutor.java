@@ -57,8 +57,8 @@ public class WSCallerExecutor implements Callable<Boolean>, Comparable<WSCallerE
 		Boolean ret = null;
 		try
 		{
-			Event eventFromDB = this.eventDistributorMapper.getEvent(this.event.getEventId());
-			if(eventFromDB.getStatus().equals(EventStatus.ABORT))
+			EventStatus eventStatusFromDB = this.eventDistributorMapper.getEventStatus(this.event.getEventId());
+			if(EventStatus.ABORT.equals(eventStatusFromDB))
 				return ret;
 			Map<String, Object> response = this.caller.call(this.event);
 			String responseStr = OBJECT_MAPPER.writeValueAsString(response);
