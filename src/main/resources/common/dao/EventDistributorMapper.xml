@@ -357,4 +357,19 @@
     </update>
 
 
+<!-- 	public int (@Param("cleanupAgingInDays") int , @Param("") int maxCleanupRecordCountPerDelete);
+ -->
+ 
+ 	<delete id="deleteIldRecords">
+		<![CDATA[
+			DELETE from EVENT a
+			 WHERE a.EVENT_ID in 
+			(
+				SELECT b.EVENT_ID from EVENT b
+				 WHERE b.UPDATE_TIME < sysdate - #{cleanupAgingInDays}
+				   AND rownum <= #{maxCleanupRecordCountPerDelete}
+			)
+		]]>
+ 	</delete>
+
 </mapper>

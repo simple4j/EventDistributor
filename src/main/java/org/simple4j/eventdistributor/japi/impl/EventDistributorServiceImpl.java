@@ -26,6 +26,7 @@ import org.simple4j.eventdistributor.beans.HealthCheck.Status;
 import org.simple4j.eventdistributor.dao.EventDistributorMapper;
 import org.simple4j.eventdistributor.japi.EventDistributorService;
 import org.simple4j.eventdistributor.japi.EventTargetRule;
+import org.simple4j.eventdistributor.tasks.DBCleaner;
 import org.simple4j.eventdistributor.tasks.EventFetcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +56,7 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	private Map<String, String> api2AllowedCallerIdsRegEx = null;
 	private Map<String, String> api2AllowedUserIdsRegEx = null;
 	
+	private DBCleaner dbCleaner = null;
 
 	private String hostName;
 	
@@ -142,6 +144,8 @@ public class EventDistributorServiceImpl implements EventDistributorService
 
 	public EventFetcher getEventFetcher()
 	{
+		if(this.eventFetcher == null)
+			throw new RuntimeException("eventFetcher not configured for EventDistributorServiceImpl instance");
 		return eventFetcher;
 	}
 
@@ -202,6 +206,18 @@ public class EventDistributorServiceImpl implements EventDistributorService
 		this.eventFetcherExecutorCoreThreadPoolSize = eventFetcherExecutorCoreThreadPoolSize;
 	}
 
+	public DBCleaner getDbCleaner()
+	{
+		if(this.dbCleaner == null)
+			throw new RuntimeException("dbCleaner not configured for EventDistributorServiceImpl instance");
+		return dbCleaner;
+	}
+
+	public void setDbCleaner(DBCleaner dbCleaner)
+	{
+		this.dbCleaner = dbCleaner;
+	}
+
 	@Override
 	public void init()
 	{
@@ -216,6 +232,10 @@ public class EventDistributorServiceImpl implements EventDistributorService
         this.eventFetcherExecutor = new ScheduledThreadPoolExecutor(this.getEventFetcherExecutorCoreThreadPoolSize());
         this.eventFetcherExecutor.scheduleWithFixedDelay(this.getEventFetcher(),
                 this.getEventFetcher().getSleepTimeInMillisec(), this.getEventFetcher().getSleepTimeInMillisec(), TimeUnit.MILLISECONDS);
+        
+        //Using the eventfetcherExecutor instead of creating a new Executor
+        this.eventFetcherExecutor.scheduleWithFixedDelay(this.getDbCleaner(),
+                this.getDbCleaner().getSleepTimeInMillisec(), this.getDbCleaner().getSleepTimeInMillisec(), TimeUnit.MILLISECONDS);
 	}
 	
 	@Override

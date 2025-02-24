@@ -128,6 +128,7 @@
 				<entry key="abortEvent" value="[0-9]*" />
 			</map>
 		</property>
+		<property name="dbCleaner" ref="dbCleaner"/>
 	</bean>
 	
 	<util:list id="eventTargetRules">
@@ -172,6 +173,11 @@
 				<entry key="system3"  value=".*200.*"></entry>
 			</map>
 		</property>
+	</bean>
+
+	<bean id="dbCleaner" class="org.simple4j.eventdistributor.tasks.DBCleaner">
+		<property name="eventDistributorMapper" ref="eventDistributorMapper" />
+		<property name="sleepTimeInMillisec" value="${dbCleaner.sleepTimeInMillisec}"></property>
 	</bean>
 
 

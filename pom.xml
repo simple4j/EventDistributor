@@ -189,7 +189,7 @@
 		<dependency>
 			<groupId>org.simple4j</groupId>
 			<artifactId>WSFeeler</artifactId>
-			<version>25.01.26.0</version>
+			<version>25.01.26.1</version>
 		</dependency>
        
          <!-- mybatis -->

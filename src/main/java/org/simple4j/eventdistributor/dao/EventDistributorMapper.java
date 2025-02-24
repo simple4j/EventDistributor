@@ -40,5 +40,6 @@ public interface EventDistributorMapper
 
 	public List<Event> getEventsForDuplicateCheck(@Param("event") Event event, @Param("startPosition") int startPosition, @Param("numberOfRecords") int numberOfRecords);
 
+	public int deleteIldRecords(@Param("cleanupAgingInDays") int cleanupAgingInDays, @Param("maxCleanupRecordCountPerDelete") int maxCleanupRecordCountPerDelete);
 
 }
