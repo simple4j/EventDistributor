@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  * &lt;fully qualified class name&gt; - to control logging of method entry/exits at class level
  * &lt;fully qualified class name&gt;.parameter.&lt;method name&gt; - to control logging of parameters at class level or method level
  * &lt;fully qualified class name&gt;.returnvalue.&lt;method name&gt; - to control logging of return values at class level or method level
- * @author sj45615
+ * @author jsrinivas108
  *
  */
 public class MethodLoggingInterceptor implements MethodInterceptor {

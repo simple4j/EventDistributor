@@ -252,9 +252,21 @@ public class EventDistributorServiceImpl implements EventDistributorService
 	{
 		AppResponse<HealthCheck> ret = new AppResponse<HealthCheck>();
 		HealthCheck healthCheck = new HealthCheck();
+		healthCheck.artifactId = this.getArtifactId();
+		healthCheck.groupId = this.getGroupId();
+		healthCheck.version = this.getVersion();
 		healthCheck.configStatus = this.healthcheckStatus;
-		//TODO: need to do other healthchecks
-		ret.responseObject = healthCheck ;
+		healthCheck.db = Status.HEALTHY;
+		try
+		{
+			this.getEventDistributorMapper().getEventStatus(0);
+		}
+		catch(Throwable t)
+		{
+			LOGGER.warn("Error whule fetching status for health check ", t);
+			healthCheck.db = Status.UNHEALTHY;
+		}
+		ret.responseObject = healthCheck;
 		return ret;
 	}
 
