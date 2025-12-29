@@ -12,7 +12,7 @@
 
     <bean id="repostEventCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
 		<property name="httpWSClient" ref="httpWSClient"></property>
-		<property name="jSONConfig">
+		<property name="config">
 			<value>
 				<![CDATA[
 {
@@ -47,7 +47,7 @@
 
     <bean id="repostPublishCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
 		<property name="httpWSClient" ref="httpWSClient"></property>
-		<property name="jSONConfig">
+		<property name="config">
 			<value>
 				<![CDATA[
 {

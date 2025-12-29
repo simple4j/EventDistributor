@@ -23,7 +23,7 @@
 	<bean id="wiremocksystem1VerificationCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
 		<!-- Same http cliecnt can be used for webservice and also for POJOASHTTP-->
 		<property name="httpWSClient" ref="wiremocksystem1HTTPWSClient"></property>
-		<property name="jSONConfig">
+		<property name="config">
 			<value>
 				<![CDATA[
 {

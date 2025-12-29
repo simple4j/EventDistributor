@@ -14,7 +14,7 @@
 	
 	<bean id="callerFactory2" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
 		<property name="httpWSClient" ref="httpWSClient2" />
-		<property name="jSONConfigFile" value="classpath:wstarget/system2.json" />
+		<property name="configFile" value="classpath:wstarget/system2.json" />
 		<property name="responseBodyParsers">
 			<map>
 		<!--

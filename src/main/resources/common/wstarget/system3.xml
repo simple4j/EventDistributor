@@ -15,7 +15,7 @@
 	<bean id="callerFactory3" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
 		<!-- using the same wiremock for timeout testing. Hence, reusing httpWSClient2-->
 		<property name="httpWSClient" ref="httpWSClient2" />
-		<property name="jSONConfigFile" value="classpath:wstarget/system3.json" />
+		<property name="configFile" value="classpath:wstarget/system3.json" />
 		<property name="responseBodyParsers">
 			<map>
 		<!--
