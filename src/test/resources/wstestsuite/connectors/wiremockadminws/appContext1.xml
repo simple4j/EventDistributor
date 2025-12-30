@@ -20,9 +20,10 @@
 		<property name="socketTimeOutMillis" value="30000"></property>
 	</bean>
  
-	<bean id="wiremocksystem1VerificationCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
+	<bean id="wiremocksystem1VerificationCallerFactory" class="org.simple4j.wsclient.caller.factory.FreeMarkerCallerFactory">
 		<!-- Same http cliecnt can be used for webservice and also for POJOASHTTP-->
 		<property name="httpWSClient" ref="wiremocksystem1HTTPWSClient"></property>
+		<property name="configParser" ref="jsonConfigParser"></property>
 		<property name="config">
 			<value>
 				<![CDATA[
@@ -57,6 +58,9 @@
 
 	<!-- {} -->
 	<bean id="successBodyParser" class="org.simple4j.wsclient.parser.impl.JSONParser">
+	</bean>
+
+	<bean id="jsonConfigParser" class="org.simple4j.wsclient.caller.factory.JSONConfigParser">
 	</bean>
 
 </beans>

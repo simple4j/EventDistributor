@@ -12,8 +12,9 @@
 
 	<bean id="system1Caller1" factory-bean="callerFactory1" factory-method="getCaller"></bean>
 	
-	<bean id="callerFactory1" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
+	<bean id="callerFactory1" class="org.simple4j.wsclient.caller.factory.FreeMarkerCallerFactory">
 		<property name="httpWSClient" ref="httpWSClient1" />
+		<property name="configParser" ref="jsonConfigParser"></property>
 		<property name="configFile" value="classpath:wstarget/system1.json" />
 		<property name="responseBodyParsers">
 			<map>
@@ -34,6 +35,8 @@
 		<property name="serviceProtocol" value="http"></property>
 		<property name="socketTimeOutMillis" value="3000"></property>
 	</bean>
-	
+
+	<bean id="jsonConfigParser" class="org.simple4j.wsclient.caller.factory.JSONConfigParser">
+	</bean>
 
 </beans>

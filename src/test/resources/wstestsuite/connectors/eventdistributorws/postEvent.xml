@@ -10,8 +10,9 @@
                         http://www.springframework.org/schema/util
 						http://www.springframework.org/schema/util/spring-util-3.1.xsd">
 
-	<bean id="allFieldsPostCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
+	<bean id="allFieldsPostCallerFactory" class="org.simple4j.wsclient.caller.factory.FreeMarkerCallerFactory">
 		<property name="httpWSClient" ref="httpWSClient"></property>
+		<property name="configParser" ref="jsonConfigParser"></property>
 		<property name="config">
 			<value>
 				<![CDATA[
@@ -45,8 +46,9 @@
 		</property>
 	</bean>
 
-	<bean id="mandatoryFieldsPostCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
+	<bean id="mandatoryFieldsPostCallerFactory" class="org.simple4j.wsclient.caller.factory.FreeMarkerCallerFactory">
 		<property name="httpWSClient" ref="httpWSClient"></property>
+		<property name="configParser" ref="jsonConfigParser"></property>
 		<property name="config">
 			<value>
 				<![CDATA[
@@ -80,8 +82,9 @@
 		</property>
 	</bean>
 
-	<bean id="noFieldsPostCallerFactory" class="org.simple4j.wsclient.caller.FreeMarkerJSONCallerFactory">
+	<bean id="noFieldsPostCallerFactory" class="org.simple4j.wsclient.caller.factory.FreeMarkerCallerFactory">
 		<property name="httpWSClient" ref="httpWSClient"></property>
+		<property name="configParser" ref="jsonConfigParser"></property>
 		<property name="config">
 			<value>
 				<![CDATA[

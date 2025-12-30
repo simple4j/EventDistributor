@@ -27,4 +27,7 @@
 	<bean id="jsonBodyParser" class="org.simple4j.wsclient.parser.impl.JSONParser">
 	</bean>
 
+	<bean id="jsonConfigParser" class="org.simple4j.wsclient.caller.factory.JSONConfigParser">
+	</bean>
+
 </beans>
