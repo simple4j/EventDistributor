@@ -226,7 +226,7 @@
 		<dependency>
 			<groupId>org.simple4j</groupId>
 			<artifactId>WSFeeler</artifactId>
-			<version>25.12.29.0</version>
+			<version>25.12.29.3-SNAPSHOT</version>
 		    <scope>test</scope>
 		</dependency>
 		<dependency>
