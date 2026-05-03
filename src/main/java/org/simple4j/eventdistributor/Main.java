@@ -90,285 +90,284 @@ public class Main
         main = context.getBean("main", Main.class);
         main.init();
 
-		Javalin javalin = Javalin.create();
+		Javalin javalin = Javalin.create(config -> {
+			config.routes.before(ctx ->
+	        {
+	            long startTimeMillisec = System.currentTimeMillis();
+				String requestId = startTimeMillisec + "@" + main.hostName;
+	            ctx.attribute(START_TIME_MILLISEC, startTimeMillisec);
 
-        javalin.before(ctx ->
-        {
-            long startTimeMillisec = System.currentTimeMillis();
-			String requestId = startTimeMillisec + "@" + main.hostName;
-            ctx.attribute(START_TIME_MILLISEC, startTimeMillisec);
+	            String headerRequestId = ctx.header(REQUEST_ID_KEY);
+	            if (StringUtils.isNotBlank(headerRequestId))
+	            {
+	                requestId = headerRequestId;
+	            }
 
-            String headerRequestId = ctx.header(REQUEST_ID_KEY);
-            if (StringUtils.isNotBlank(headerRequestId))
-            {
-                requestId = headerRequestId;
-            }
+	            MDC.put(REQUEST_ID_KEY, requestId);
+	            String body = "";
+	            String query = ctx.queryString();
+	            ctx.header("content-type", "application/json");
+	            LOGGER.info("Start request url is {}, method is {}, {}{}", ctx.url(), ctx.method(),
+	                    StringUtils.isNotBlank(body) ? ("body is " + body + ", ") : "",
+	                    StringUtils.isNotBlank(query) ? ("query string is " + query) : "");
+	        });
 
-            MDC.put(REQUEST_ID_KEY, requestId);
-            String body = "";
-            String query = ctx.queryString();
-            ctx.header("content-type", "application/json");
-            LOGGER.info("Start request url is {}, method is {}, {}{}", ctx.url(), ctx.method(),
-                    StringUtils.isNotBlank(body) ? ("body is " + body + ", ") : "",
-                    StringUtils.isNotBlank(query) ? ("query string is " + query) : "");
-        });
+			config.routes.after(ctx ->
+	        {
+	            
+	            Object returnObject = ctx.attribute(JAPI_RETURN_OBJECT);
+	            if(returnObject instanceof AppResponse)
+	            {
+	                AppResponse appResponse = ctx.attribute(JAPI_RETURN_OBJECT);
+	                ctx.status(main.getStatusCode(appResponse));
+	            }
+	            else
+	            {
+//	            	LOGGER.info("Setting HTTP code 200");
+//	                ctx.status(200);
+	            }
+	            
+	            finishCall(ctx);
+	        });
+			
+			config.routes.exception(Exception.class, (e, ctx) ->
+	        {
+	            LOGGER.error("Status {}", ctx.statusCode());
+	            LOGGER.error("Unhandled exception", e);
+	            setHeader(ctx);
+	            ctx.status(500);
+	            ErrorDetails errorDetails = new ErrorDetails();
+	            errorDetails.errorId = MDC.get(REQUEST_ID_KEY);
+	            errorDetails.errorType = ErrorType.RUNTIME_ERROR.toString();
+	            errorDetails.errorDescription = e.toString();
 
-        javalin.after(ctx ->
-        {
-            
-            Object returnObject = ctx.attribute(JAPI_RETURN_OBJECT);
-            if(returnObject instanceof AppResponse)
-            {
-                AppResponse appResponse = ctx.attribute(JAPI_RETURN_OBJECT);
-                ctx.status(main.getStatusCode(appResponse));
-            }
-            else
-            {
-//            	LOGGER.info("Setting HTTP code 200");
-//                ctx.status(200);
-            }
-            
-            finishCall(ctx);
-        });
+	            finishCall(ctx);
 
-        javalin.exception(Exception.class, (e, ctx) ->
-        {
-            LOGGER.error("Status {}", ctx.statusCode());
-            LOGGER.error("Unhandled exception", e);
-            setHeader(ctx);
-            ctx.status(500);
-            ErrorDetails errorDetails = new ErrorDetails();
-            errorDetails.errorId = MDC.get(REQUEST_ID_KEY);
-            errorDetails.errorType = ErrorType.RUNTIME_ERROR.toString();
-            errorDetails.errorDescription = e.toString();
+	            try
+	            {
+	                ctx.result(OBJECT_MAPPER.writeValueAsString(errorDetails));
+	            }
+	            catch (JsonProcessingException e1)
+	            {
+	                LOGGER.error("Marshaling error:", e1);
+	                throw new RuntimeException("Marshaling error:", e1);
+	            }
+	        });
 
-            finishCall(ctx);
+			config.routes.post(main.getUrlBase()+"/serverhealth.json", ctx -> 
+	        {
+	            String bodyJson = ctx.body();
+	            HealthCheck healthCheckReq = null;
+	            try
+	            {
+	                healthCheckReq = OBJECT_MAPPER.readValue(bodyJson, HealthCheck.class);
+	            }
+	            catch(Exception e)
+	            {
+	                throw new RuntimeException("Error parsing request body <" + bodyJson +">",  e);
+	            }
+	            main.getEventDistributorService().setHealthCheck(healthCheckReq.status);
+	            setHeader(ctx);
+	            ctx.result("{}");
+	        });
 
-            try
-            {
-                ctx.result(OBJECT_MAPPER.writeValueAsString(errorDetails));
-            }
-            catch (JsonProcessingException e1)
-            {
-                LOGGER.error("Marshaling error:", e1);
-                throw new RuntimeException("Marshaling error:", e1);
-            }
-        });
+			config.routes.get(main.getUrlBase()+"/serverhealth.json", ctx -> 
+	        {
+	            AppResponse<HealthCheck> ret = main.getEventDistributorService().getHealthCheck();
+	            HealthCheck healthCheckRes = ret.responseObject;
+	            setHeader(ctx);
+	            ctx.result(OBJECT_MAPPER.writeValueAsString(healthCheckRes));
+	        });
 
-        javalin.post(main.getUrlBase()+"/serverhealth.json", ctx -> 
-        {
-            String bodyJson = ctx.body();
-            HealthCheck healthCheckReq = null;
-            try
-            {
-                healthCheckReq = OBJECT_MAPPER.readValue(bodyJson, HealthCheck.class);
-            }
-            catch(Exception e)
-            {
-                throw new RuntimeException("Error parsing request body <" + bodyJson +">",  e);
-            }
-            main.getEventDistributorService().setHealthCheck(healthCheckReq.status);
-            setHeader(ctx);
-            ctx.result("{}");
-        });
+			config.routes.post(main.getUrlBase()+"/event.json", ctx -> 
+	        {
+	            AppResponse<Long> ret = null;
+	            String callerId = ctx.header("callerId");
+	            LOGGER.debug("callerId 1 {}", callerId);
+				callerId = getStringWithEmptyCheck(callerId, null);
+	            LOGGER.debug("callerId 2 {}", callerId);
+	            String userId = getStringWithEmptyCheck(ctx.header(main.getUserIdHeader()), null);
+	            
+	            String body = ctx.body();
+	            Event event = null;
+	            try
+	            {
+	            	event = OBJECT_MAPPER.readValue(body, Event.class);
+	            }
+	            catch(Exception e)
+	            {
+	                throw new RuntimeException("Error parsing request body <" + body +">",  e);
+	            }
+	            
+	            ret = main.getEventDistributorService().postEvent(event, callerId, userId);
 
-        javalin.get(main.getUrlBase()+"/serverhealth.json", ctx -> 
-        {
-            AppResponse<HealthCheck> ret = main.getEventDistributorService().getHealthCheck();
-            HealthCheck healthCheckRes = ret.responseObject;
-            setHeader(ctx);
-            ctx.result(OBJECT_MAPPER.writeValueAsString(healthCheckRes));
-        });
+	            //setting AppResponse object for usage in javalin.after handler
+	            ctx.attribute(JAPI_RETURN_OBJECT, ret);
 
-//        javalin.post(main.getUrlBase()+"/eventFetcherTrigger.json", ctx -> 
-//        {
-//        	pauseEventFetcher = false;
-//            setHeader(ctx);
-//            ctx.result("{}");
-//        });
+	            if(ret.errorDetails != null)
+	            {
+	            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
+	                return;
+	            }
+	            
+	            ctx.result("{\"eventId\":\""+ret.responseObject+"\"}");
+	        });
 
-        javalin.post(main.getUrlBase()+"/event.json", ctx -> 
-        {
-            AppResponse<Long> ret = null;
-            String callerId = ctx.header("callerId");
-            LOGGER.debug("callerId 1 {}", callerId);
-			callerId = getStringWithEmptyCheck(callerId, null);
-            LOGGER.debug("callerId 2 {}", callerId);
-            String userId = getStringWithEmptyCheck(ctx.header(main.getUserIdHeader()), null);
-            
-            String body = ctx.body();
-            Event event = null;
-            try
-            {
-            	event = OBJECT_MAPPER.readValue(body, Event.class);
-            }
-            catch(Exception e)
-            {
-                throw new RuntimeException("Error parsing request body <" + body +">",  e);
-            }
-            
-            ret = main.getEventDistributorService().postEvent(event, callerId, userId);
+			config.routes.get(main.getUrlBase()+"/event.json", ctx -> 
+	        {
+	            AppResponse<Event> ret = null;
+	            String callerId = ctx.header("callerId");
+	            String eventId = ctx.queryParam("eventId");
+	            
+	            ret = main.getEventDistributorService().getEvent(callerId, eventId);
+	            
+	            LOGGER.info("ret:{}", ret);
 
-            //setting AppResponse object for usage in javalin.after handler
-            ctx.attribute(JAPI_RETURN_OBJECT, ret);
+	            //setting AppResponse object for usage in javalin.after handler
+	            ctx.attribute(JAPI_RETURN_OBJECT, ret);
+	            if(ret.errorDetails != null)
+	            {
+	            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
+	                return;
+	            }
+	            ctx.result(OBJECT_MAPPER.writeValueAsString(ret.responseObject));
+	        });
 
-            if(ret.errorDetails != null)
-            {
-            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
-                return;
-            }
-            
-            ctx.result("{\"eventId\":\""+ret.responseObject+"\"}");
-        });
+			config.routes.get(main.getUrlBase()+"/events.json", ctx -> 
+	        {
+	            AppResponse<List<Event>> ret = null;
+	            String callerId = ctx.header("callerId");
 
-        javalin.get(main.getUrlBase()+"/event.json", ctx -> 
-        {
-            AppResponse<Event> ret = null;
-            String callerId = ctx.header("callerId");
-            String eventId = ctx.queryParam("eventId");
-            
-            ret = main.getEventDistributorService().getEvent(callerId, eventId);
-            
-            LOGGER.info("ret:{}", ret);
+	            Event event = new Event();
+	            String eventIdStr = getStringWithEmptyCheck(ctx.queryParam("eventId"), null);
+	    		if (eventIdStr != null)
+	    		{
+	    			long eventId = Long.parseLong(eventIdStr);
+	    			event.setEventId(eventId);
+	    		}
 
-            //setting AppResponse object for usage in javalin.after handler
-            ctx.attribute(JAPI_RETURN_OBJECT, ret);
-            if(ret.errorDetails != null)
-            {
-            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
-                return;
-            }
-            ctx.result(OBJECT_MAPPER.writeValueAsString(ret.responseObject));
-        });
+	            event.setBusinessRecordId(getStringWithEmptyCheck(ctx.queryParam("businessRecordId"), null));
+	            event.setBusinessRecordType(getStringWithEmptyCheck(ctx.queryParam("businessRecordType"), null));
+	            event.setBusinessRecordSubType(getStringWithEmptyCheck(ctx.queryParam("businessRecordSubType"), null));
+	            event.setBusinessRecordVersion(getStringWithEmptyCheck(ctx.queryParam("businessRecordVersion"), null));
+	            event.setSource(getStringWithEmptyCheck(ctx.queryParam("source"), null));
+	            String statusStr = getStringWithEmptyCheck(ctx.queryParam("status"), null);
+	            if(statusStr != null)
+	            {
+	            	try
+	            	{
+	    				event.setStatus(EventStatus.valueOf(statusStr));
+	            	}
+	            	catch(IllegalArgumentException e)
+	            	{
+	            		ret = new AppResponse<>();
+	                    ctx.attribute(JAPI_RETURN_OBJECT, ret);
+	            		ErrorDetails ed = new ErrorDetails();
+	            		ed.errorId = System.currentTimeMillis() + "@" + main.hostName;
+	            		ed.errorType = "PARAMETER_ERROR";
+	            		ed.errorReason = new ArrayList<String>();
+	            		ed.errorReason.add("event.status-invalid");
+	            		ret.errorDetails = ed;
+	                	ctx.result(OBJECT_MAPPER.writeValueAsString(ed));
+	                    return;
+	            	}
+	            }
+	            event.setProcessingHost(getStringWithEmptyCheck(ctx.queryParam("processingHost"), null));
+	            event.setCreateBy(getStringWithEmptyCheck(ctx.queryParam("createBy"), null));
+	            String startPosition = getStringWithEmptyCheck(ctx.queryParam("startPosition"), null);
+	            String numberOfRecords = getStringWithEmptyCheck(ctx.queryParam("numberOfRecords"), null);
+	            
+	            ret = main.getEventDistributorService().getEvents(callerId, startPosition, numberOfRecords, event);
+	            
+	            LOGGER.info("ret:{}", ret);
 
-        javalin.get(main.getUrlBase()+"/events.json", ctx -> 
-        {
-            AppResponse<List<Event>> ret = null;
-            String callerId = ctx.header("callerId");
+	            //setting AppResponse object for usage in javalin.after handler
+	            ctx.attribute(JAPI_RETURN_OBJECT, ret);
+	            if(ret.errorDetails != null)
+	                if(ret.errorDetails != null)
+	                {
+	                	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
+	                    return;
+	                }
+	            
+	            HashMap<String, List<Event>> retMap = new HashMap<String, List<Event>>();
+	            retMap.put("events", ret.responseObject);
+	            System.out.println("retMap="+retMap);
+	            System.out.println("JSONretMap="+OBJECT_MAPPER.writeValueAsString(retMap));
+	            ctx.result(OBJECT_MAPPER.writeValueAsString(retMap));
+	        });
 
-            Event event = new Event();
-            String eventIdStr = getStringWithEmptyCheck(ctx.queryParam("eventId"), null);
-    		if (eventIdStr != null)
-    		{
-    			long eventId = Long.parseLong(eventIdStr);
-    			event.setEventId(eventId);
-    		}
+			config.routes.post(main.getUrlBase()+"/repost/event.json", ctx -> 
+	        {
+	            AppResponse<Long> ret = null;
+	            String callerId = getStringWithEmptyCheck(ctx.header("callerId"), null);
+	            String userId = getStringWithEmptyCheck(ctx.header(main.getUserIdHeader()), null);
+	            String eventId = ctx.queryParam("eventId");
+	            
+	        	ret = main.getEventDistributorService().repostEvent(eventId, callerId, userId);
 
-            event.setBusinessRecordId(getStringWithEmptyCheck(ctx.queryParam("businessRecordId"), null));
-            event.setBusinessRecordType(getStringWithEmptyCheck(ctx.queryParam("businessRecordType"), null));
-            event.setBusinessRecordSubType(getStringWithEmptyCheck(ctx.queryParam("businessRecordSubType"), null));
-            event.setBusinessRecordVersion(getStringWithEmptyCheck(ctx.queryParam("businessRecordVersion"), null));
-            event.setSource(getStringWithEmptyCheck(ctx.queryParam("source"), null));
-            String statusStr = getStringWithEmptyCheck(ctx.queryParam("status"), null);
-            if(statusStr != null)
-            {
-            	try
-            	{
-    				event.setStatus(EventStatus.valueOf(statusStr));
-            	}
-            	catch(IllegalArgumentException e)
-            	{
-            		ret = new AppResponse<>();
-                    ctx.attribute(JAPI_RETURN_OBJECT, ret);
-            		ErrorDetails ed = new ErrorDetails();
-            		ed.errorId = System.currentTimeMillis() + "@" + main.hostName;
-            		ed.errorType = "PARAMETER_ERROR";
-            		ed.errorReason = new ArrayList<String>();
-            		ed.errorReason.add("event.status-invalid");
-            		ret.errorDetails = ed;
-                	ctx.result(OBJECT_MAPPER.writeValueAsString(ed));
-                    return;
-            	}
-            }
-            event.setProcessingHost(getStringWithEmptyCheck(ctx.queryParam("processingHost"), null));
-            event.setCreateBy(getStringWithEmptyCheck(ctx.queryParam("createBy"), null));
-            String startPosition = getStringWithEmptyCheck(ctx.queryParam("startPosition"), null);
-            String numberOfRecords = getStringWithEmptyCheck(ctx.queryParam("numberOfRecords"), null);
-            
-            ret = main.getEventDistributorService().getEvents(callerId, startPosition, numberOfRecords, event);
-            
-            LOGGER.info("ret:{}", ret);
+	            //setting AppResponse object for usage in javalin.after handler
+	            ctx.attribute(JAPI_RETURN_OBJECT, ret);
 
-            //setting AppResponse object for usage in javalin.after handler
-            ctx.attribute(JAPI_RETURN_OBJECT, ret);
-            if(ret.errorDetails != null)
-                if(ret.errorDetails != null)
-                {
-                	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
-                    return;
-                }
-            
-            HashMap<String, List<Event>> retMap = new HashMap<String, List<Event>>();
-            retMap.put("events", ret.responseObject);
-            System.out.println("retMap="+retMap);
-            System.out.println("JSONretMap="+OBJECT_MAPPER.writeValueAsString(retMap));
-            ctx.result(OBJECT_MAPPER.writeValueAsString(retMap));
-        });
+	            if(ret.errorDetails != null)
+	            {
+	            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
+	                return;
+	            }
+	            
+	            ctx.result("{\"eventId\":\""+ret.responseObject+"\"}");
+	        });
 
-        javalin.post(main.getUrlBase()+"/repost/event.json", ctx -> 
-        {
-            AppResponse<Long> ret = null;
-            String callerId = getStringWithEmptyCheck(ctx.header("callerId"), null);
-            String userId = getStringWithEmptyCheck(ctx.header(main.getUserIdHeader()), null);
-            String eventId = ctx.queryParam("eventId");
-            
-        	ret = main.getEventDistributorService().repostEvent(eventId, callerId, userId);
+			config.routes.post(main.getUrlBase()+"/repost/publish.json", ctx -> 
+	        {
+	            AppResponse<Long> ret = null;
+	            String callerId = getStringWithEmptyCheck(ctx.header("callerId"), null);
+	            String userId = getStringWithEmptyCheck(ctx.header(main.getUserIdHeader()), null);
+	            String publishId = ctx.queryParam("publishId");
+	            
+	            ret = main.getEventDistributorService().republish(publishId, callerId, userId);
 
-            //setting AppResponse object for usage in javalin.after handler
-            ctx.attribute(JAPI_RETURN_OBJECT, ret);
+	            //setting AppResponse object for usage in javalin.after handler
+	            ctx.attribute(JAPI_RETURN_OBJECT, ret);
 
-            if(ret.errorDetails != null)
-            {
-            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
-                return;
-            }
-            
-            ctx.result("{\"eventId\":\""+ret.responseObject+"\"}");
-        });
+	            if(ret.errorDetails != null)
+	            {
+	            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
+	                return;
+	            }
+	            
+	            ctx.result("{\"publishId\":\""+ret.responseObject+"\"}");
+	        });
 
-        javalin.post(main.getUrlBase()+"/repost/publish.json", ctx -> 
-        {
-            AppResponse<Long> ret = null;
-            String callerId = getStringWithEmptyCheck(ctx.header("callerId"), null);
-            String userId = getStringWithEmptyCheck(ctx.header(main.getUserIdHeader()), null);
-            String publishId = ctx.queryParam("publishId");
-            
-            ret = main.getEventDistributorService().republish(publishId, callerId, userId);
+			config.routes.post(main.getUrlBase()+"/abort/event.json", ctx -> 
+	        {
+	            AppResponse<Long> ret = null;
+	            String callerId = getStringWithEmptyCheck(ctx.header("callerId"), null);
+	            String userId = getStringWithEmptyCheck(ctx.header(main.getUserIdHeader()), null);
+	            String eventId = ctx.queryParam("eventId");
+	            
+	        	ret = main.getEventDistributorService().abortEvent(eventId, callerId, userId);
 
-            //setting AppResponse object for usage in javalin.after handler
-            ctx.attribute(JAPI_RETURN_OBJECT, ret);
+	            //setting AppResponse object for usage in javalin.after handler
+	            ctx.attribute(JAPI_RETURN_OBJECT, ret);
 
-            if(ret.errorDetails != null)
-            {
-            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
-                return;
-            }
-            
-            ctx.result("{\"publishId\":\""+ret.responseObject+"\"}");
-        });
+	            if(ret.errorDetails != null)
+	            {
+	            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
+	                return;
+	            }
+	            
+	            ctx.result("{}");
+	        });
 
-        javalin.post(main.getUrlBase()+"/abort/event.json", ctx -> 
-        {
-            AppResponse<Long> ret = null;
-            String callerId = getStringWithEmptyCheck(ctx.header("callerId"), null);
-            String userId = getStringWithEmptyCheck(ctx.header(main.getUserIdHeader()), null);
-            String eventId = ctx.queryParam("eventId");
-            
-        	ret = main.getEventDistributorService().abortEvent(eventId, callerId, userId);
-
-            //setting AppResponse object for usage in javalin.after handler
-            ctx.attribute(JAPI_RETURN_OBJECT, ret);
-
-            if(ret.errorDetails != null)
-            {
-            	ctx.result(OBJECT_MAPPER.writeValueAsString(ret.errorDetails));
-                return;
-            }
-            
-            ctx.result("{}");
-        });
-
-        javalin.start(main.getListenerPortNumber());
+			config.events.serverStopping(() -> {
+            	LOGGER.info("Stopping event");
+            });
+			
+			config.events.serverStopped(() -> {
+            	LOGGER.info("Stopped event");
+            });
+		}).start(main.getListenerPortNumber());
         
     	LOGGER.info("Start up completed");
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -376,14 +375,6 @@ public class Main
         	javalin.stop();
         }));
 
-        javalin.events(event -> {
-            event.serverStopping(() -> {
-            	LOGGER.info("Stopping event");
-            });
-            event.serverStopped(() -> {
-            	LOGGER.info("Stopped event");
-            });
-        });
     	LOGGER.info("End of main method");
     }
 
