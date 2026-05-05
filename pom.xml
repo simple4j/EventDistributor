@@ -4,7 +4,7 @@
 	<groupId>org.simple4j</groupId>
 	<artifactId>EventDistributor</artifactId>
 	<packaging>jar</packaging>
-	<version>26.05.02.1-SNAPSHOT</version>
+	<version>26.05.02.1</version>
 	<name>EventDistributor</name>
 	<url>https://github.com/simple4j/EventDistributor</url>
 	<licenses>
@@ -25,7 +25,7 @@
 		<connection>scm:git:https://github.com/simple4j/EventDistributor.git</connection>
 		<developerConnection>scm:git:https://github.com/simple4j/EventDistributor.git</developerConnection>
 		<url>https://github.com/simple4j/EventDistributor</url>
-	  <tag>HEAD</tag>
+	  <tag>EventDistributor-26.05.02.1</tag>
   </scm>
 	<distributionManagement>
 		<snapshotRepository>
