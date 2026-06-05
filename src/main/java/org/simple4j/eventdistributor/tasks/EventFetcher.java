@@ -26,6 +26,7 @@ import org.simple4j.eventdistributor.dao.EventDistributorMapper;
 import org.simple4j.wsclient.caller.Caller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * Periodic job to fetch new events, process for distribution asynchronously, collect statuses and update in DB.
@@ -35,7 +36,7 @@ import org.slf4j.LoggerFactory;
 public class EventFetcher implements Runnable
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    
+
 	private EventDistributorMapper eventDistributorMapper = null;
 	private long sleepTimeInMillisec = 1000;
 	private int maxFetchRecordCountPerBatch = 10;
@@ -164,6 +165,9 @@ public class EventFetcher implements Runnable
 	@Override
 	public void run()
 	{
+		try
+		{
+            MDC.put(Main.REQUEST_ID_KEY, ""+System.currentTimeMillis());
 		if(Main.pauseEventFetcher)
 		{
 			LOGGER.info("pauseEventFetcher is true");
@@ -279,6 +283,15 @@ public class EventFetcher implements Runnable
 				this.getEventDistributorMapper().updateEvent(eventFromDB);
 			}
 			
+		}
+		}
+		catch(Throwable t)
+		{
+			LOGGER.warn("", t);
+		}
+		finally
+		{
+			MDC.clear();
 		}
 
 	}

@@ -46,7 +46,7 @@ public class Main
             .serializationInclusion(Include.NON_NULL)
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
             .build();
-    private static final String REQUEST_ID_KEY = "requestId";
+    public static final String REQUEST_ID_KEY = "requestId";
     private static final String JAPI_RETURN_OBJECT = "returnObject";
     private static final String START_TIME_MILLISEC = "startTimeMillisec";
 
