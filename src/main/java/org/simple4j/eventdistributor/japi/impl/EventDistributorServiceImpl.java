@@ -385,7 +385,7 @@ public class EventDistributorServiceImpl implements EventDistributorService
 		else
 		{
 			//not duplicate case
-			event.setStatus(EventStatus.NEW);
+			event.setStatus(EventStatus.DRAFT);
 
 			Instant duplicateCheckEndTimeInstant = Instant.ofEpochMilli(currentTimeMillis + this.getDuplicateCheckExpiryMillisec());
 			ZonedDateTime duplicateCheckEndTimeZonedDateTime = ZonedDateTime.ofInstant(duplicateCheckEndTimeInstant, ZoneId.systemDefault());
@@ -420,6 +420,8 @@ public class EventDistributorServiceImpl implements EventDistributorService
 			{
 				this.getEventDistributorMapper().insertEventTarget(event.getEventId(), targetId);
 			}
+			event.setStatus(EventStatus.NEW);
+			this.getEventDistributorMapper().updateEvent(event);
 		}
 		return ret;
 	}
