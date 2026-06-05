@@ -2,9 +2,11 @@ package org.simple4j.eventdistributor.tasks;
 
 import java.lang.invoke.MethodHandles;
 
+import org.simple4j.eventdistributor.Main;
 import org.simple4j.eventdistributor.dao.EventDistributorMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 public class DBCleaner implements Runnable
 {
@@ -82,20 +84,32 @@ public class DBCleaner implements Runnable
 	@Override
 	public void run()
 	{
-		
-		int deleteRecordCount = 0;
-		int deleteExecutionCount = 0;
-		int lastDeleteCount = 1;
-		while (deleteRecordCount < this.getMaxCleanupRecordCountPerBatch() &&
-				deleteExecutionCount < this.getMaxNumberOfDeletesPerBatch() &&
-				lastDeleteCount > 0)
+		try
 		{
-			lastDeleteCount = this.getEventDistributorMapper().deleteIldRecords(this.getCleanupAgingInDays(), this.getMaxCleanupRecordCountPerDelete());
-			deleteRecordCount = deleteRecordCount + lastDeleteCount;
-			deleteExecutionCount = deleteExecutionCount+1;
-			
-			LOGGER.debug("deleteRecordCount:{}", deleteRecordCount);
-			LOGGER.debug("deleteExecutionCount:{}", deleteExecutionCount);
+            MDC.put(Main.REQUEST_ID_KEY, ""+System.currentTimeMillis());
+		
+			int deleteRecordCount = 0;
+			int deleteExecutionCount = 0;
+			int lastDeleteCount = 1;
+			while (deleteRecordCount < this.getMaxCleanupRecordCountPerBatch() &&
+					deleteExecutionCount < this.getMaxNumberOfDeletesPerBatch() &&
+					lastDeleteCount > 0)
+			{
+				lastDeleteCount = this.getEventDistributorMapper().deleteIldRecords(this.getCleanupAgingInDays(), this.getMaxCleanupRecordCountPerDelete());
+				deleteRecordCount = deleteRecordCount + lastDeleteCount;
+				deleteExecutionCount = deleteExecutionCount+1;
+				
+				LOGGER.debug("deleteRecordCount:{}", deleteRecordCount);
+				LOGGER.debug("deleteExecutionCount:{}", deleteExecutionCount);
+			}
+		}
+		catch(Throwable t)
+		{
+			LOGGER.warn("", t);
+		}
+		finally
+		{
+			MDC.clear();
 		}
 	}
     

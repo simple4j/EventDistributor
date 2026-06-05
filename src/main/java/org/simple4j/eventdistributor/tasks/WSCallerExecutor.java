@@ -7,6 +7,7 @@ import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import org.simple4j.eventdistributor.Main;
 import org.simple4j.eventdistributor.beans.Event;
 import org.simple4j.eventdistributor.beans.EventStatus;
 import org.simple4j.eventdistributor.beans.PublishAttempt;
@@ -15,6 +16,7 @@ import org.simple4j.eventdistributor.dao.EventDistributorMapper;
 import org.simple4j.wsclient.caller.Caller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -53,53 +55,61 @@ public class WSCallerExecutor implements Callable<Boolean>, Comparable<WSCallerE
 	@Override
 	public Boolean call()
 	{
-		LOGGER.info("Inside run of {} for publish attempt{}", this, this. publishAttempt);
-		Boolean ret = null;
 		try
 		{
-			EventStatus eventStatusFromDB = this.eventDistributorMapper.getEventStatus(this.event.getEventId());
-			if(EventStatus.ABORT.equals(eventStatusFromDB))
-				return ret;
-			Map<String, Object> response = this.caller.call(this.event);
-			String responseStr = OBJECT_MAPPER.writeValueAsString(response);
-			LOGGER.info("Calling caller {} for publish attempt{}", this.caller.getHttpWSClient().getServicePortNumber(), this. publishAttempt);
-			this.publishAttempt.setResponseHttpCode((String) response.get(this.caller.getHttpStatusCodeFieldName()));
-			this.publishAttempt.setResponseBody(responseStr);
-
-			ret = responseStr.matches(this.successResponseMatchRegexPattern);
-			if(ret)
+            MDC.put(Main.REQUEST_ID_KEY, ""+System.currentTimeMillis());
+			LOGGER.info("Inside run of {} for publish attempt{}", this, this. publishAttempt);
+			Boolean ret = null;
+			try
 			{
-				this.publishAttempt.setPublishAttemptStatus(PublishAttemptStatus.SUCCESS);
+				EventStatus eventStatusFromDB = this.eventDistributorMapper.getEventStatus(this.event.getEventId());
+				if(EventStatus.ABORT.equals(eventStatusFromDB))
+					return ret;
+				Map<String, Object> response = this.caller.call(this.event);
+				String responseStr = OBJECT_MAPPER.writeValueAsString(response);
+				LOGGER.info("Calling caller {} for publish attempt{}", this.caller.getHttpWSClient().getServicePortNumber(), this. publishAttempt);
+				this.publishAttempt.setResponseHttpCode((String) response.get(this.caller.getHttpStatusCodeFieldName()));
+				this.publishAttempt.setResponseBody(responseStr);
+	
+				ret = responseStr.matches(this.successResponseMatchRegexPattern);
+				if(ret)
+				{
+					this.publishAttempt.setPublishAttemptStatus(PublishAttemptStatus.SUCCESS);
+				}
+				else
+				{
+					this.publishAttempt.setPublishAttemptStatus(PublishAttemptStatus.FAILURE);
+				}
 			}
-			else
+			catch(Throwable t)
 			{
+				LOGGER.warn("Error while publish attempt {}", this.publishAttempt, t);
+				this.publishAttempt.setErrorDetails(t.toString());
 				this.publishAttempt.setPublishAttemptStatus(PublishAttemptStatus.FAILURE);
+				ret = false;
 			}
-		}
-		catch(Throwable t)
-		{
-			LOGGER.warn("Error while publish attempt {}", this.publishAttempt, t);
-			this.publishAttempt.setErrorDetails(t.toString());
-			this.publishAttempt.setPublishAttemptStatus(PublishAttemptStatus.FAILURE);
-			ret = false;
+			finally
+			{
+				Instant instant = Instant.ofEpochMilli(System.currentTimeMillis());
+				ZonedDateTime currentTime = ZonedDateTime.ofInstant(instant, ZoneId.systemDefault());
+				this.publishAttempt.setUpdateTime(currentTime);
+			}
+			
+			try
+			{
+				this.eventDistributorMapper.updatePublishAttempt(this.publishAttempt);
+			}
+			catch(Throwable t)
+			{
+				LOGGER.error("Error while updating publish attempt {}", this.publishAttempt, t);
+				ret = false;
+			}
+			return ret;
 		}
 		finally
 		{
-			Instant instant = Instant.ofEpochMilli(System.currentTimeMillis());
-			ZonedDateTime currentTime = ZonedDateTime.ofInstant(instant, ZoneId.systemDefault());
-			this.publishAttempt.setUpdateTime(currentTime);
+			MDC.clear();
 		}
-		
-		try
-		{
-			this.eventDistributorMapper.updatePublishAttempt(this.publishAttempt);
-		}
-		catch(Throwable t)
-		{
-			LOGGER.error("Error while updating publish attempt {}", this.publishAttempt, t);
-			ret = false;
-		}
-		return ret;
 	}
 
 	@Override

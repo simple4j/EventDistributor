@@ -168,122 +168,122 @@ public class EventFetcher implements Runnable
 		try
 		{
             MDC.put(Main.REQUEST_ID_KEY, ""+System.currentTimeMillis());
-		if(Main.pauseEventFetcher)
-		{
-			LOGGER.info("pauseEventFetcher is true");
-			return;
-		}
-
-		long currentLockExpiryMillisec = System.currentTimeMillis() + this.getLockExpiryMillisec();
-		ZonedDateTime statusExpiryTimeZonedDateTime = getZonedDateTime(currentLockExpiryMillisec);
-		
-		ZonedDateTime currentTime = getZonedDateTime(System.currentTimeMillis());
-		//update NEW to INPROGRESS with status expiry
-		//update any INPROGRESS with status expired to current host and new status expiry
-		this.getEventDistributorMapper().lockEvents(this.getHostName(), this.getMaxFetchRecordCountPerBatch(), statusExpiryTimeZonedDateTime, currentTime);
-		List<Event> events = this.getEventDistributorMapper().fetchLockedEvents(this.getHostName());
-		
-		for (Event event : events)
-		{
-
-			LOGGER.debug("processing event {}", event);
-			Map<String, PublishAttempt> targetId2NEWPublishAttempt = new HashMap<String, PublishAttempt>();
-			Map<String, PublishAttempt> targetId2SUCCESSPublishAttempt = new HashMap<String, PublishAttempt>();
-			
-			//Below loop is to process any stuck publish events
-			for (Iterator<PublishAttempt> iterator = event.getPublishAttempts().iterator(); iterator.hasNext();)
+			if(Main.pauseEventFetcher)
 			{
-				PublishAttempt pa = iterator.next();
-				if(PublishAttemptStatus.NEW.equals(pa.getPublishAttemptStatus()))
-				{
-					targetId2NEWPublishAttempt.put(pa.getTargetId(), pa);
-				}
-				if(PublishAttemptStatus.SUCCESS.equals(pa.getPublishAttemptStatus()))
-				{
-					targetId2SUCCESSPublishAttempt.put(pa.getTargetId(), pa);
-				}
+				LOGGER.info("pauseEventFetcher is true");
+				return;
 			}
-			
-			List<String> targetIds = event.getTargetIds();
-			List<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
-			for (String targetId : targetIds)
-			{
-				LOGGER.debug("processing targetId {}", targetId);
-				EventStatus eventStatusFromDB = this.getEventDistributorMapper().getEventStatus(event.getEventId());
-				if(EventStatus.ABORT.equals(eventStatusFromDB))
-					break;
-				PublishAttempt successPublishAttempt = targetId2SUCCESSPublishAttempt.get(targetId);
-				PublishAttempt publishAttempt = targetId2NEWPublishAttempt.get(targetId);
-				//successPublishAttempt will be null for new events
-				//publishAttempt will not be null for republish case
-				if(successPublishAttempt == null || publishAttempt != null)
-				{
-					if(publishAttempt == null)
-					{
-						currentTime = getZonedDateTime(System.currentTimeMillis());
 	
-						//Publish attempt record does not exists, create a new attempt
-						publishAttempt = new PublishAttempt();
-						publishAttempt.setPublishId(this.getEventDistributorMapper().getPublishAttemptId());
-						publishAttempt.setCreateBy(event.getCreateBy());
-						publishAttempt.setCreateTime(currentTime);
-						publishAttempt.setEventId(event.getEventId());
-						publishAttempt.setPublishId(this.getEventDistributorMapper().getPublishAttemptId());
-						publishAttempt.setPublishAttemptStatus(PublishAttemptStatus.NEW);
-						publishAttempt.setTargetId(targetId);
-						publishAttempt.setUpdateTime(currentTime);
-						this.getEventDistributorMapper().insertPublishAttempt(publishAttempt);
-						LOGGER.debug("inserted new record for targetId {}", targetId);
-					}
-					
-					
-					Caller caller = this.getTargetId2Caller().get(targetId);
-					String successResponseMatchRegexPattern = this.getTargetId2SuccessResponseMatchRegexPattern().get(targetId);
-					LOGGER.debug("submitted for processing for targetId {}", publishAttempt);
-	                Future<Boolean> future = this.getDistributionExecutor().submit(new WSCallerExecutor(caller, event,
-	                		publishAttempt, this.getEventDistributorMapper(), successResponseMatchRegexPattern));
-	                futures.add(future);
-				}
-			}
-
-			boolean eventSuccess = true;
-			for (Iterator iterator = futures.iterator(); iterator.hasNext();)
-			{
-				Future<Boolean> future = (Future<Boolean>) iterator.next();
-				try
-				{
-					Boolean publishAttemptSuccess = future.get();
-					//below condition is possible when the event is aborted after submitting to the executor
-					if(publishAttemptSuccess == null)
-						break;
-					eventSuccess = eventSuccess && publishAttemptSuccess;
-				}
-				catch (InterruptedException e)
-				{
-					eventSuccess = false;
-					LOGGER.warn("", e);
-					
-				}
-				catch (ExecutionException e)
-				{
-					eventSuccess = false;
-					LOGGER.warn("", e);
-				}
-			}
-			Event eventFromDB = this.getEventDistributorMapper().getEvent(event.getEventId());
-			if(!eventFromDB.getStatus().equals(EventStatus.ABORT))
-			{
-				if(eventSuccess)
-					eventFromDB.setStatus(EventStatus.SUCCESS);
-				else
-					eventFromDB.setStatus(EventStatus.FAILURE);
-				currentTime = getZonedDateTime(System.currentTimeMillis());
-				eventFromDB.setUpdateTime(currentTime);
-				eventFromDB.setUpdateBy("EventFetcher");
-				this.getEventDistributorMapper().updateEvent(eventFromDB);
-			}
+			long currentLockExpiryMillisec = System.currentTimeMillis() + this.getLockExpiryMillisec();
+			ZonedDateTime statusExpiryTimeZonedDateTime = getZonedDateTime(currentLockExpiryMillisec);
 			
-		}
+			ZonedDateTime currentTime = getZonedDateTime(System.currentTimeMillis());
+			//update NEW to INPROGRESS with status expiry
+			//update any INPROGRESS with status expired to current host and new status expiry
+			this.getEventDistributorMapper().lockEvents(this.getHostName(), this.getMaxFetchRecordCountPerBatch(), statusExpiryTimeZonedDateTime, currentTime);
+			List<Event> events = this.getEventDistributorMapper().fetchLockedEvents(this.getHostName());
+			
+			for (Event event : events)
+			{
+	
+				LOGGER.debug("processing event {}", event);
+				Map<String, PublishAttempt> targetId2NEWPublishAttempt = new HashMap<String, PublishAttempt>();
+				Map<String, PublishAttempt> targetId2SUCCESSPublishAttempt = new HashMap<String, PublishAttempt>();
+				
+				//Below loop is to process any stuck publish events
+				for (Iterator<PublishAttempt> iterator = event.getPublishAttempts().iterator(); iterator.hasNext();)
+				{
+					PublishAttempt pa = iterator.next();
+					if(PublishAttemptStatus.NEW.equals(pa.getPublishAttemptStatus()))
+					{
+						targetId2NEWPublishAttempt.put(pa.getTargetId(), pa);
+					}
+					if(PublishAttemptStatus.SUCCESS.equals(pa.getPublishAttemptStatus()))
+					{
+						targetId2SUCCESSPublishAttempt.put(pa.getTargetId(), pa);
+					}
+				}
+				
+				List<String> targetIds = event.getTargetIds();
+				List<Future<Boolean>> futures = new ArrayList<Future<Boolean>>();
+				for (String targetId : targetIds)
+				{
+					LOGGER.debug("processing targetId {}", targetId);
+					EventStatus eventStatusFromDB = this.getEventDistributorMapper().getEventStatus(event.getEventId());
+					if(EventStatus.ABORT.equals(eventStatusFromDB))
+						break;
+					PublishAttempt successPublishAttempt = targetId2SUCCESSPublishAttempt.get(targetId);
+					PublishAttempt publishAttempt = targetId2NEWPublishAttempt.get(targetId);
+					//successPublishAttempt will be null for new events
+					//publishAttempt will not be null for republish case
+					if(successPublishAttempt == null || publishAttempt != null)
+					{
+						if(publishAttempt == null)
+						{
+							currentTime = getZonedDateTime(System.currentTimeMillis());
+		
+							//Publish attempt record does not exists, create a new attempt
+							publishAttempt = new PublishAttempt();
+							publishAttempt.setPublishId(this.getEventDistributorMapper().getPublishAttemptId());
+							publishAttempt.setCreateBy(event.getCreateBy());
+							publishAttempt.setCreateTime(currentTime);
+							publishAttempt.setEventId(event.getEventId());
+							publishAttempt.setPublishId(this.getEventDistributorMapper().getPublishAttemptId());
+							publishAttempt.setPublishAttemptStatus(PublishAttemptStatus.NEW);
+							publishAttempt.setTargetId(targetId);
+							publishAttempt.setUpdateTime(currentTime);
+							this.getEventDistributorMapper().insertPublishAttempt(publishAttempt);
+							LOGGER.debug("inserted new record for targetId {}", targetId);
+						}
+						
+						
+						Caller caller = this.getTargetId2Caller().get(targetId);
+						String successResponseMatchRegexPattern = this.getTargetId2SuccessResponseMatchRegexPattern().get(targetId);
+						LOGGER.debug("submitted for processing for targetId {}", publishAttempt);
+		                Future<Boolean> future = this.getDistributionExecutor().submit(new WSCallerExecutor(caller, event,
+		                		publishAttempt, this.getEventDistributorMapper(), successResponseMatchRegexPattern));
+		                futures.add(future);
+					}
+				}
+	
+				boolean eventSuccess = true;
+				for (Iterator iterator = futures.iterator(); iterator.hasNext();)
+				{
+					Future<Boolean> future = (Future<Boolean>) iterator.next();
+					try
+					{
+						Boolean publishAttemptSuccess = future.get();
+						//below condition is possible when the event is aborted after submitting to the executor
+						if(publishAttemptSuccess == null)
+							break;
+						eventSuccess = eventSuccess && publishAttemptSuccess;
+					}
+					catch (InterruptedException e)
+					{
+						eventSuccess = false;
+						LOGGER.warn("", e);
+						
+					}
+					catch (ExecutionException e)
+					{
+						eventSuccess = false;
+						LOGGER.warn("", e);
+					}
+				}
+				Event eventFromDB = this.getEventDistributorMapper().getEvent(event.getEventId());
+				if(!eventFromDB.getStatus().equals(EventStatus.ABORT))
+				{
+					if(eventSuccess)
+						eventFromDB.setStatus(EventStatus.SUCCESS);
+					else
+						eventFromDB.setStatus(EventStatus.FAILURE);
+					currentTime = getZonedDateTime(System.currentTimeMillis());
+					eventFromDB.setUpdateTime(currentTime);
+					eventFromDB.setUpdateBy("EventFetcher");
+					this.getEventDistributorMapper().updateEvent(eventFromDB);
+				}
+				
+			}
 		}
 		catch(Throwable t)
 		{
