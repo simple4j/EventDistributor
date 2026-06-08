@@ -287,7 +287,7 @@ public class EventFetcher implements Runnable
 		}
 		catch(Throwable t)
 		{
-			LOGGER.warn("", t);
+			LOGGER.error("", t);
 		}
 		finally
 		{
