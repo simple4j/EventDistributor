@@ -8,6 +8,7 @@
         <result column="BUSINESS_REPORT_TYPE" property="businessRecordType"/>
         <result column="BUSINESS_RECORD_SUB_TYPE" property="businessRecordSubType"/>
         <result column="BUSINESS_RECORD_VERSION" property="businessRecordVersion"/>
+        <result column="ADDITIONAL_DATA" property="additionalDataString"/>
         <result column="SOURCE" property="source"/>
         <result column="STATUS" property="status"/>
         <result column="DUPLICATE_EVENT_ID" property="duplicateEventId"/>
@@ -50,6 +51,7 @@
 			a.BUSINESS_REPORT_TYPE,
 			a.BUSINESS_RECORD_SUB_TYPE,
 			a.BUSINESS_RECORD_VERSION,
+			a.ADDITIONAL_DATA,
 			a.SOURCE,
 			a.STATUS,
 			a.DUPLICATE_EVENT_ID,
@@ -68,6 +70,7 @@
 				b.BUSINESS_REPORT_TYPE,
 				b.BUSINESS_RECORD_SUB_TYPE,
 				b.BUSINESS_RECORD_VERSION,
+				b.ADDITIONAL_DATA,
 				b.SOURCE,
 				b.STATUS,
 				b.DUPLICATE_EVENT_ID,
@@ -131,6 +134,7 @@
 			a.BUSINESS_REPORT_TYPE,
 			a.BUSINESS_RECORD_SUB_TYPE,
 			a.BUSINESS_RECORD_VERSION,
+			a.ADDITIONAL_DATA,
 			a.SOURCE,
 			a.STATUS,
 			a.DUPLICATE_EVENT_ID,
@@ -149,6 +153,7 @@
 				b.BUSINESS_REPORT_TYPE,
 				b.BUSINESS_RECORD_SUB_TYPE,
 				b.BUSINESS_RECORD_VERSION,
+				b.ADDITIONAL_DATA,
 				b.SOURCE,
 				b.STATUS,
 				b.DUPLICATE_EVENT_ID,
@@ -189,8 +194,8 @@
 	
 	
 	<insert id="insertEvent" parameterType="Event">
-        	INSERT INTO EVENT (EVENT_ID,BUSINESS_RECORD_ID,BUSINESS_REPORT_TYPE,BUSINESS_RECORD_SUB_TYPE,BUSINESS_RECORD_VERSION,SOURCE,STATUS,DUPLICATE_EVENT_ID,DUPLICATE_CHECK_END_TIME,REPOST_PARENT_EVENT_ID,PROCESSING_HOST,STATUS_EXPIRY_TIME,CREATE_TIME,UPDATE_TIME,CREATE_BY,UPDATE_BY) 
-        	VALUES (#{event.eventId},#{event.businessRecordId},#{event.businessRecordType},#{event.businessRecordSubType},#{event.businessRecordVersion},#{event.source},#{event.status},#{event.duplicateEventId},#{event.duplicateCheckEndTime},#{event.repostParentEventId},#{event.processingHost},#{event.statusExpiryTime},#{event.createTime},#{event.updateTime},#{event.createBy},#{event.updateBy})
+        	INSERT INTO EVENT (EVENT_ID,BUSINESS_RECORD_ID,BUSINESS_REPORT_TYPE,BUSINESS_RECORD_SUB_TYPE,BUSINESS_RECORD_VERSION,ADDITIONAL_DATA,SOURCE,STATUS,DUPLICATE_EVENT_ID,DUPLICATE_CHECK_END_TIME,REPOST_PARENT_EVENT_ID,PROCESSING_HOST,STATUS_EXPIRY_TIME,CREATE_TIME,UPDATE_TIME,CREATE_BY,UPDATE_BY) 
+        	VALUES (#{event.eventId},#{event.businessRecordId},#{event.businessRecordType},#{event.businessRecordSubType},#{event.businessRecordVersion},#{event.additionalDataString},#{event.source},#{event.status},#{event.duplicateEventId},#{event.duplicateCheckEndTime},#{event.repostParentEventId},#{event.processingHost},#{event.statusExpiryTime},#{event.createTime},#{event.updateTime},#{event.createBy},#{event.updateBy})
     </insert>
 
 	<select id="getEventId" resultType="java.lang.Long">
@@ -220,6 +225,7 @@
 				b.BUSINESS_REPORT_TYPE,
 				b.BUSINESS_RECORD_SUB_TYPE,
 				b.BUSINESS_RECORD_VERSION,
+				b.ADDITIONAL_DATA,
 				b.SOURCE,
 				b.STATUS,
 				b.DUPLICATE_EVENT_ID,
@@ -316,6 +322,7 @@
 				b.BUSINESS_REPORT_TYPE,
 				b.BUSINESS_RECORD_SUB_TYPE,
 				b.BUSINESS_RECORD_VERSION,
+				b.ADDITIONAL_DATA,
 				b.SOURCE,
 				b.STATUS,
 				b.DUPLICATE_EVENT_ID,
@@ -356,10 +363,6 @@
 		]]>
     </update>
 
-
-<!-- 	public int (@Param("cleanupAgingInDays") int , @Param("") int maxCleanupRecordCountPerDelete);
- -->
- 
  	<delete id="deleteIldRecords">
 		<![CDATA[
 			DELETE from EVENT a

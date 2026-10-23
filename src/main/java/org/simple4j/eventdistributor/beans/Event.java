@@ -2,6 +2,7 @@ package org.simple4j.eventdistributor.beans;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 
 public class Event
 {
@@ -10,6 +11,8 @@ public class Event
     private String businessRecordType;
     private String businessRecordSubType;
     private String businessRecordVersion;
+    private Map<String,String> additionalData;
+    private String additionalDataString;
     private String source;
     private EventStatus status;
     private Long duplicateEventId;
@@ -65,6 +68,22 @@ public class Event
 	public void setBusinessRecordVersion(String businessRecordVersion)
 	{
 		this.businessRecordVersion = businessRecordVersion;
+	}
+	public Map<String, String> getAdditionalData()
+	{
+		return additionalData;
+	}
+	public void setAdditionalData(Map<String, String> additionalData)
+	{
+		this.additionalData = additionalData;
+	}
+	public String getAdditionalDataString()
+	{
+		return additionalDataString;
+	}
+	public void setAdditionalDataString(String additionalDataString)
+	{
+		this.additionalDataString = additionalDataString;
 	}
 	public String getSource()
 	{

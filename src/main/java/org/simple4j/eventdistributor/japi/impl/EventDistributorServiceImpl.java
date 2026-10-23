@@ -31,12 +31,24 @@ import org.simple4j.eventdistributor.tasks.EventFetcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+
 /**
  * Business logic bean implementation.
  */
 public class EventDistributorServiceImpl implements EventDistributorService
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .serializationInclusion(Include.NON_NULL)
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            .build();
 
 	private Status healthcheckStatus = Status.HEALTHY;
 
@@ -395,6 +407,16 @@ public class EventDistributorServiceImpl implements EventDistributorService
 			Integer newStatusCoolingTimeMillisec = this.getSource2NewEventCoolingTimeMillisec().get(event.getSource());
 			newStatusCoolingTimeMillisec = newStatusCoolingTimeMillisec == null ? 0 : newStatusCoolingTimeMillisec;
 			event.setStatusExpiryTime(ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentTimeMillis + newStatusCoolingTimeMillisec), ZoneId.systemDefault()));
+		}
+		if(event.getAdditionalData() != null && event.getAdditionalData().size()>0)
+		{
+			try
+			{
+				event.setAdditionalDataString(OBJECT_MAPPER.writeValueAsString(event.getAdditionalData()));
+			} catch (JsonProcessingException e)
+			{
+				throw new RuntimeException(e);
+			}
 		}
 		event.setCreateTime(currentZonedDateTime);
 		event.setUpdateTime(currentZonedDateTime);

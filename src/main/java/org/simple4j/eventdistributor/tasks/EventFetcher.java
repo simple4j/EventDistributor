@@ -28,6 +28,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+
 /**
  * Periodic job to fetch new events, process for distribution asynchronously, collect statuses and update in DB.
  * This will also fetch events struck in IN_PROGRESS state, reposted events and republishes.
@@ -36,6 +42,11 @@ import org.slf4j.MDC;
 public class EventFetcher implements Runnable
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .serializationInclusion(Include.NON_NULL)
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            .build();
 
 	private EventDistributorMapper eventDistributorMapper = null;
 	private long sleepTimeInMillisec = 1000;
@@ -236,7 +247,8 @@ public class EventFetcher implements Runnable
 							LOGGER.debug("inserted new record for targetId {}", targetId);
 						}
 						
-						
+						if(event.getAdditionalDataString() != null && event.getAdditionalDataString().length() > 0)
+							event.setAdditionalData(OBJECT_MAPPER.readValue(event.getAdditionalDataString(),Map.class));
 						Caller caller = this.getTargetId2Caller().get(targetId);
 						String successResponseMatchRegexPattern = this.getTargetId2SuccessResponseMatchRegexPattern().get(targetId);
 						LOGGER.debug("submitted for processing for targetId {}", publishAttempt);
