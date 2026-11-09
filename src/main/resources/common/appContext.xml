@@ -151,6 +151,14 @@
 				</list>
 			</property>
 		</bean>
+		<bean id="rule1" class="org.simple4j.eventdistributor.japi.impl.MvelEventTargetRule">
+			<property name="mvelExpression"><value><![CDATA[ businessRecordType!= null && "PRODUCT".equals(businessRecordType) ]]></value></property>
+			<property name="targetIds">
+				<list>
+					<value>system4</value>
+				</list>
+			</property>
+		</bean>
 	</util:list>
 
 	<bean id="eventFetcher" class="org.simple4j.eventdistributor.tasks.EventFetcher">
@@ -164,6 +172,7 @@
 				<entry key="system1" value-ref="system1Caller1"></entry>
 				<entry key="system2" value-ref="system2Caller2"></entry>
 				<entry key="system3" value-ref="system3Caller3"></entry>
+				<entry key="system4" value-ref="system4Caller4"></entry>
 			</map>
 		</property>
 		<property name="targetId2SuccessResponseMatchRegexPattern">
@@ -171,6 +180,7 @@
 				<entry key="system1"  value=".*SUCCESS.*"></entry>
 				<entry key="system2"  value=".*200.*"></entry>
 				<entry key="system3"  value=".*200.*"></entry>
+				<entry key="system4"  value=".*200.*"></entry>
 			</map>
 		</property>
 	</bean>

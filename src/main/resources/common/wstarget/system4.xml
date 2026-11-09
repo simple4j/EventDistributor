@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                        http://www.springframework.org/schema/beans/spring-beans.xsd
+                        http://www.springframework.org/schema/context 
+                        http://www.springframework.org/schema/context/spring-context.xsd
+                        http://www.springframework.org/schema/util
+						http://www.springframework.org/schema/util/spring-util-3.1.xsd">
+
+	<bean id="system4Caller4" factory-bean="callerFactory4" factory-method="getCaller"></bean>
+	
+	<bean id="callerFactory4" class="org.simple4j.wsclient.caller.factory.FreeMarkerCallerFactory">
+		<!-- using the same wiremock for timeout testing. Hence, reusing httpWSClient2-->
+		<property name="httpWSClient" ref="httpWSClient2" />
+		<property name="configParser" ref="jsonConfigParser"></property>
+		<property name="configFile" value="classpath:wstarget/system4.json" />
+		<property name="responseBodyParsers">
+			<map>
+		<!--
+				<entry key="(200)|(404)|(403)">
+					<bean id="jsonBodyParser" class="org.simple4j.wsclient.parser.impl.JSONParser">
+					</bean>
+				</entry>
+			-->
+			</map>
+		</property>
+	</bean>
+
+</beans>

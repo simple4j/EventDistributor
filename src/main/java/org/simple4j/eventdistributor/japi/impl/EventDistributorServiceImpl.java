@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -484,6 +485,20 @@ public class EventDistributorServiceImpl implements EventDistributorService
 			ret.errorDetails.errorId = System.currentTimeMillis()+"@"+ this.getEventFetcher().getHostName();
 			ret.errorDetails.errorType = ErrorType.EVENT_NOTFOUND.toString();
 			ret.errorDetails.errorDescription = "The event not found";
+		}
+		else
+		{
+			if(event.getAdditionalDataString() != null && event.getAdditionalDataString().trim().length() > 0)
+			{
+					try
+					{
+						event.setAdditionalData(OBJECT_MAPPER.readValue(event.getAdditionalDataString(), Map.class));
+						event.setAdditionalDataString(null);
+					} catch (JsonProcessingException e)
+					{
+						throw new RuntimeException("Error unmashalling additionDataString:"+event.getAdditionalDataString(), e);
+					}
+			}
 		}
 		ret.responseObject = event;
 		return ret ;

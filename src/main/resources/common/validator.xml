@@ -186,6 +186,7 @@
 				<ref bean="createByPropertyValidator"/>
 				<ref bean="businessRecordSubTypeValidator"/>
 				<ref bean="businessRecordVersionValidator"/>
+				<ref bean="additionalDataValidator"/>
 			</list>
 		</property>
 	</bean>
@@ -400,6 +401,51 @@
 			</list>
 		</property>
 	</bean>
+
+	<bean id="additionalDataValidator" class="org.simple4j.apiaopvalidator.validation.BeanValidator">
+		<property name="doNullCheck" value="false" />
+		<property name="fieldName" value="additionalData" />
+		<property name="propertyPath" value="additionalData" />
+		<property name="validators">
+			<!--  list of validators to be applied on the field. For example, null check, minlength chheck etc. -->
+			<list>
+				<bean class="org.simple4j.apiaopvalidator.validation.MapValidator" >
+					<property name="doNullCheck" value="false" />
+					<property name="minSize" value="0" />
+					<property name="maxSize" value="3" />
+					<property name="entryValidators">
+						<list>
+							<bean class="org.simple4j.apiaopvalidator.validation.BeanValidator" >
+								<property name="doNullCheck" value="false" />
+								<property name="fieldName" value="key" />
+								<property name="propertyPath" value="key" />
+								<property name="validators">
+									<list>
+										<bean class="org.simple4j.apiaopvalidator.validation.MaxLengthValidator" >
+											<property name="maxLength" value="256"></property>
+										</bean>
+									</list>
+								</property>
+							</bean>
+							<bean class="org.simple4j.apiaopvalidator.validation.BeanValidator" >
+								<property name="doNullCheck" value="false" />
+								<property name="fieldName" value="value" />
+								<property name="propertyPath" value="value" />
+								<property name="validators">
+									<list>
+										<bean class="org.simple4j.apiaopvalidator.validation.MaxLengthValidator" >
+											<property name="maxLength" value="256"></property>
+										</bean>
+									</list>
+								</property>
+							</bean>
+						</list>
+					</property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
 
 	<bean id="startPositionValidator" class="org.simple4j.apiaopvalidator.validation.MethodArgumentValidator">
 		<property name="fieldName" value="startPosition" />
